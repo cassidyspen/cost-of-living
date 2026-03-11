@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Relocate — Find out what your life actually costs somewhere new</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0C0F0A;
+    --surface: #141710;
+    --surface2: #1C2018;
+    --border: #2A2E26;
+    --border2: #363B30;
+    --text: #EEF0E8;
+    --text2: #9EA690;
+    --text3: #5C6055;
+    --accent: #B8F060;
+    --accent2: #7DC422;
+    --accent-dim: rgba(184,240,96,0.12);
+    --accent-dim2: rgba(184,240,96,0.06);
+    --red: #FF6B5B;
+    --red-dim: rgba(255,107,91,0.12);
+    --yellow: #FFD166;
+    --yellow-dim: rgba(255,209,102,0.12);
+    --blue: #74C7EC;
+    --radius: 12px;
+    --radius-lg: 20px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grain */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.5;
+  }
+
+  .wrap { max-width: 900px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+  /* NAV */
+  nav {
+    padding: 20px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    position: relative; z-index: 1;
+  }
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 20px;
+    letter-spacing: -0.5px;
+    color: var(--text);
+  }
+  .logo span { color: var(--accent); }
+  .nav-tag {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text3);
+    border: 1px solid var(--border2);
+    padding: 5px 10px;
+    border-radius: 100px;
+  }
+
+  /* HERO */
+  .hero {
+    padding: 80px 0 60px;
+    text-align: center;
+  }
+  .hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--accent-dim);
+    border: 1px solid rgba(184,240,96,0.25);
+    border-radius: 100px;
+    padding: 5px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 0.5px;
+    margin-bottom: 28px;
+    animation: fadeUp 0.6s ease both;
+  }
+  .hero-eyebrow::before { content: '●'; font-size: 8px; }
+  .hero h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(36px, 6vw, 64px);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -2px;
+    color: var(--text);
+    margin-bottom: 20px;
+    animation: fadeUp 0.6s 0.1s ease both;
+  }
+  .hero h1 em {
+    font-style: normal;
+    color: var(--accent);
+    position: relative;
+  }
+  .hero p {
+    font-size: 18px;
+    color: var(--text2);
+    max-width: 520px;
+    margin: 0 auto 48px;
+    font-weight: 300;
+    line-height: 1.7;
+    animation: fadeUp 0.6s 0.2s ease both;
+  }
+
+  /* FORM CARD */
+  .form-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 36px;
+    animation: fadeUp 0.6s 0.3s ease both;
+    position: relative;
+    overflow: hidden;
+  }
+  .form-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2), transparent);
+  }
+
+  .form-section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 16px;
+  }
+
+  .city-row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 12px;
+    align-items: end;
+    margin-bottom: 28px;
+  }
+  .swap-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 50%;
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    color: var(--text2);
+    font-size: 16px;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .swap-btn:hover { border-color: var(--accent); color: var(--accent); transform: rotate(180deg); }
+
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text3);
+    letter-spacing: 0.5px;
+  }
+  .field select, .field input {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 11px 14px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    appearance: none;
+    -webkit-appearance: none;
+    width: 100%;
+  }
+  .field select:focus, .field input:focus { border-color: var(--accent); }
+  .field select option { background: var(--surface2); }
+
+  .select-wrap { position: relative; }
+  .select-wrap::after {
+    content: '↓';
+    position: absolute;
+    right: 12px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--text3);
+    font-size: 12px;
+    pointer-events: none;
+  }
+
+  .profile-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+
+  .lifestyle-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 32px;
+  }
+  .lifestyle-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text2);
+    font-size: 13px;
+    font-weight: 400;
+  }
+  .lifestyle-btn .icon { font-size: 18px; }
+  .lifestyle-btn:hover { border-color: var(--border); color: var(--text); }
+  .lifestyle-btn.active {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .calc-btn {
+    width: 100%;
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: var(--radius);
+    padding: 15px 24px;
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .calc-btn:hover { background: #CEFF7A; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(184,240,96,0.25); }
+  .calc-btn:active { transform: translateY(0); }
+
+  /* RESULTS */
+  #results { display: none; margin-top: 40px; animation: fadeUp 0.5s ease both; }
+
+  .results-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .results-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+  .verdict-badge {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 100px;
+    letter-spacing: 0.5px;
+  }
+  .verdict-cheaper { background: var(--accent-dim); border: 1px solid rgba(184,240,96,0.3); color: var(--accent); }
+  .verdict-pricier { background: var(--red-dim); border: 1px solid rgba(255,107,91,0.3); color: var(--red); }
+  .verdict-similar { background: var(--yellow-dim); border: 1px solid rgba(255,209,102,0.3); color: var(--yellow); }
+
+  /* Headline comparison */
+  .cost-headline {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 20px;
+    align-items: center;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cost-headline::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 100%, rgba(184,240,96,0.04) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .cost-city { text-align: center; }
+  .cost-city-name {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 6px;
+  }
+  .cost-amount {
+    font-family: 'Syne', sans-serif;
+    font-size: 40px;
+    font-weight: 800;
+    letter-spacing: -2px;
+    line-height: 1;
+  }
+  .cost-amount.from { color: var(--text2); }
+  .cost-amount.to { color: var(--accent); }
+  .cost-sub { font-size: 12px; color: var(--text3); margin-top: 4px; }
+  .cost-arrow {
+    font-size: 24px;
+    color: var(--text3);
+    text-align: center;
+  }
+  .diff-label {
+    text-align: center;
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    margin-top: 8px;
+  }
+
+  /* Breakdown */
+  .breakdown-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .breakdown-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+  }
+  .breakdown-label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .breakdown-label .icon { font-size: 14px; }
+  .breakdown-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .breakdown-row:last-child { border-bottom: none; }
+  .breakdown-row .item { color: var(--text2); }
+  .breakdown-row .values { display: flex; gap: 16px; font-weight: 500; }
+  .breakdown-row .from-val { color: var(--text3); }
+  .breakdown-row .to-val { color: var(--text); }
+  .breakdown-row .to-val.up { color: var(--red); }
+  .breakdown-row .to-val.down { color: var(--accent); }
+
+  /* Salary insight */
+  .salary-insight {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  .insight-icon {
+    width: 36px; height: 36px;
+    background: var(--accent-dim);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .insight-body { flex: 1; }
+  .insight-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .insight-text { font-size: 13px; color: var(--text2); line-height: 1.6; }
+  .insight-text strong { color: var(--accent); font-weight: 600; }
+
+  /* Quality of life pills */
+  .qol-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 28px;
+  }
+  .qol-pill {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 100px;
+    padding: 6px 14px;
+    font-size: 12px;
+    color: var(--text2);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .qol-pill .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .dot-green { background: var(--accent); }
+  .dot-red { background: var(--red); }
+  .dot-yellow { background: var(--yellow); }
+
+  /* CTA */
+  .share-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .share-btn {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 12px 20px;
+    color: var(--text2);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    min-width: 120px;
+  }
+  .share-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Footer */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 32px 0;
+    margin-top: 80px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .footer-note { font-size: 12px; color: var(--text3); }
+  .footer-note a { color: var(--text2); text-decoration: none; }
+  .footer-note a:hover { color: var(--accent); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .loading { display: none; text-align: center; padding: 48px 0; }
+  .loading-spinner {
+    width: 36px; height: 36px;
+    border: 2px solid var(--border2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin: 0 auto 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading p { color: var(--text3); font-size: 13px; }
+
+  @media (max-width: 640px) {
+    .profile-grid { grid-template-columns: 1fr 1fr; }
+    .breakdown-grid { grid-template-columns: 1fr; }
+    .city-row { grid-template-columns: 1fr; }
+    .swap-btn { display: none; }
+    .cost-headline { grid-template-columns: 1fr; text-align: center; }
+    .cost-arrow { transform: rotate(90deg); }
+    .hero h1 { letter-spacing: -1px; }
+    .form-card { padding: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <nav>
+    <div class="logo">re<span>·</span>locate</div>
+    <div class="nav-tag">Free Beta</div>
+  </nav>
+
+  <div class="hero">
+    <div class="hero-eyebrow">Real numbers. Not averages.</div>
+    <h1>What does your life <em>actually</em><br>cost somewhere new?</h1>
+    <p>Most cost-of-living calculators lie. They average everything and personalize nothing. This one doesn't.</p>
+  </div>
+
+  <div class="form-card">
+    <div class="form-section-title">Where are you moving?</div>
+    <div class="city-row">
+      <div class="field">
+        <label>Moving from</label>
+        <div class="select-wrap">
+          <select id="fromCity">
+            <option value="">Select city...</option>
+          </select>
+        </div>
+      </div>
+      <button class="swap-btn" onclick="swapCities()" title="Swap cities">⇄</button>
+      <div class="field">
+        <label>Moving to</label>
+        <div class="select-wrap">
+          <select id="toCity">
+            <option value="">Select city...</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section-title">Your profile</div>
+    <div class="profile-grid">
+      <div class="field">
+        <label>Annual income ($)</label>
+        <input type="number" id="income" placeholder="85,000" value="85000" min="0">
+      </div>
+      <div class="field">
+        <label>Job field</label>
+        <div class="select-wrap">
+          <select id="jobField">
+            <option value="tech">Tech / Software</option>
+            <option value="finance">Finance</option>
+            <option value="healthcare">Healthcare</option>
+            <option value="education">Education</option>
+            <option value="creative">Creative / Media</option>
+            <option value="trade">Trades / Construction</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Household size</label>
+        <div class="select-wrap">
+          <select id="household">
+            <option value="1">Just me</option>
+            <option value="2">Me + partner</option>
+            <option value="3">Small family (3)</option>
+            <option value="4">Family (4+)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section-title">Your lifestyle</div>
+    <div class="lifestyle-grid">
+      <button class="lifestyle-btn" onclick="toggleLifestyle(this, 'renter')" data-key="renter">
+        <span class="icon">🏢</span> Renter
+      </button>
+      <button class="lifestyle-btn active" onclick="toggleLifestyle(this, 'owner')" data-key="owner">
+        <span class="icon">🏠</span> Homeowner / looking to buy
+      </button>
+      <button class="lifestyle-btn active" onclick="toggleLifestyle(this, 'car')" data-key="car">
+        <span class="icon">🚗</span> Has a car
+      </button>
+      <button class="lifestyle-btn" onclick="toggleLifestyle(this, 'transit')" data-key="transit">
+        <span class="icon">🚇</span> Relies on transit
+      </button>
+      <button class="lifestyle-btn" onclick="toggleLifestyle(this, 'dining')" data-key="dining">
+        <span class="icon">🍽️</span> Eats out often
+      </button>
+      <button class="lifestyle-btn active" onclick="toggleLifestyle(this, 'cooking')" data-key="cooking">
+        <span class="icon">🥗</span> Mostly cooks at home
+      </button>
+    </div>
+
+    <button class="calc-btn" onclick="calculate()">
+      Calculate my real cost ↗
+    </button>
+  </div>
+
+  <div class="loading" id="loading">
+    <div class="loading-spinner"></div>
+    <p>Crunching real cost data…</p>
+  </div>
+
+  <div id="results"></div>
+
+  <footer>
+    <div class="footer-note">
+      Data sourced from BLS, Census Bureau, Numbeo, and user-submitted budgets.<br>
+      <a href="#">Submit your actual budget</a> · <a href="#">Methodology</a>
+    </div>
+    <div class="footer-note" style="text-align:right">
+      Built for people who are<br>actually thinking about moving.
+    </div>
+  </footer>
+</div>
+
+<script>
+// ─── CITY DATA ────────────────────────────────────────────────────────────────
+// Cost index: 100 = US national average
+// housing, food, transport, utilities, healthcare — multipliers vs national avg
+const CITIES = {
+  "New York, NY":       { idx: 187, housing: 3.2, food: 1.45, transport: 1.2, utilities: 1.35, healthcare: 1.3, salary_adj: { tech: 1.35, finance: 1.55, healthcare: 1.2, education: 1.1, creative: 1.2, trade: 1.25, other: 1.15 }, transit_score: 95, walkability: 88, safety: 62, sunshine: 55, qol_notes: ["World-class culture & dining", "Excellent public transit", "Very high housing costs", "Crowded but electric energy"] },
+  "San Francisco, CA":  { idx: 194, housing: 3.5, food: 1.5, transport: 1.3, utilities: 1.4, healthcare: 1.35, salary_adj: { tech: 1.65, finance: 1.4, healthcare: 1.25, education: 1.15, creative: 1.3, trade: 1.35, other: 1.2 }, transit_score: 75, walkability: 86, safety: 50, sunshine: 73, qol_notes: ["Top-tier tech salaries offset costs", "Beautiful geography", "High crime in some areas", "Mild weather year-round"] },
+  "Austin, TX":         { idx: 115, housing: 1.5, food: 1.05, transport: 1.1, utilities: 1.0, healthcare: 1.0, salary_adj: { tech: 1.2, finance: 1.1, healthcare: 1.0, education: 0.9, creative: 1.0, trade: 1.05, other: 0.95 }, transit_score: 35, walkability: 42, safety: 70, sunshine: 85, qol_notes: ["Fast-growing tech scene", "No state income tax", "Car-dependent", "Hot summers"] },
+  "Seattle, WA":        { idx: 148, housing: 2.1, food: 1.2, transport: 1.15, utilities: 0.95, healthcare: 1.15, salary_adj: { tech: 1.5, finance: 1.2, healthcare: 1.1, education: 1.05, creative: 1.15, trade: 1.2, other: 1.1 }, transit_score: 62, walkability: 73, safety: 65, sunshine: 45, qol_notes: ["No state income tax", "Strong tech job market", "Lots of rain", "Beautiful natural surroundings"] },
+  "Denver, CO":         { idx: 118, housing: 1.65, food: 1.05, transport: 1.0, utilities: 0.95, healthcare: 1.05, salary_adj: { tech: 1.15, finance: 1.1, healthcare: 1.05, education: 0.95, creative: 1.0, trade: 1.05, other: 0.95 }, transit_score: 52, walkability: 60, safety: 68, sunshine: 90, qol_notes: ["300+ sunny days/year", "Outdoor lifestyle paradise", "Growing tech scene", "Cold winters"] },
+  "Chicago, IL":        { idx: 106, housing: 1.3, food: 1.1, transport: 1.1, utilities: 1.05, healthcare: 1.1, salary_adj: { tech: 1.1, finance: 1.2, healthcare: 1.05, education: 1.0, creative: 1.05, trade: 1.1, other: 0.95 }, transit_score: 78, walkability: 77, safety: 55, sunshine: 58, qol_notes: ["World-class food scene", "Brutal winters", "Good transit", "High state & city taxes"] },
+  "Miami, FL":          { idx: 123, housing: 1.85, food: 1.1, transport: 1.05, utilities: 1.15, healthcare: 1.1, salary_adj: { tech: 1.05, finance: 1.15, healthcare: 1.05, education: 0.9, creative: 1.05, trade: 1.0, other: 0.9 }, transit_score: 40, walkability: 55, safety: 60, sunshine: 95, qol_notes: ["No state income tax", "Beach lifestyle", "Very hot & humid summers", "Growing finance hub"] },
+  "Boston, MA":         { idx: 162, housing: 2.4, food: 1.3, transport: 1.2, utilities: 1.25, healthcare: 1.2, salary_adj: { tech: 1.3, finance: 1.3, healthcare: 1.25, education: 1.2, creative: 1.1, trade: 1.2, other: 1.1 }, transit_score: 72, walkability: 80, safety: 72, sunshine: 52, qol_notes: ["Top universities nearby", "Strong healthcare & biotech", "Harsh winters", "Rich history"] },
+  "Los Angeles, CA":    { idx: 157, housing: 2.6, food: 1.3, transport: 1.2, utilities: 1.2, healthcare: 1.2, salary_adj: { tech: 1.4, finance: 1.25, healthcare: 1.15, education: 1.1, creative: 1.35, trade: 1.2, other: 1.1 }, transit_score: 45, walkability: 68, safety: 60, sunshine: 95, qol_notes: ["Entertainment & creative capital", "Incredible weather", "Notorious traffic", "Very car-dependent"] },
+  "Nashville, TN":      { idx: 107, housing: 1.4, food: 1.0, transport: 0.95, utilities: 0.95, healthcare: 0.98, salary_adj: { tech: 1.05, finance: 1.0, healthcare: 1.05, education: 0.88, creative: 1.1, trade: 1.0, other: 0.9 }, transit_score: 28, walkability: 40, safety: 65, sunshine: 78, qol_notes: ["Booming music & creative scene", "No state income tax", "Car-dependent", "Hot summers"] },
+  "Phoenix, AZ":        { idx: 98, housing: 1.2, food: 0.98, transport: 1.0, utilities: 1.1, healthcare: 1.0, salary_adj: { tech: 1.05, finance: 1.0, healthcare: 1.0, education: 0.88, creative: 0.95, trade: 1.0, other: 0.9 }, transit_score: 30, walkability: 38, safety: 66, sunshine: 96, qol_notes: ["Very affordable for a major city", "Extreme heat (110°F+ summers)", "Growing job market", "Car-essential"] },
+  "Portland, OR":       { idx: 126, housing: 1.7, food: 1.1, transport: 1.05, utilities: 0.9, healthcare: 1.1, salary_adj: { tech: 1.2, finance: 1.05, healthcare: 1.05, education: 1.0, creative: 1.1, trade: 1.1, other: 0.95 }, transit_score: 65, walkability: 72, safety: 58, sunshine: 48, qol_notes: ["No sales tax", "Strong food & coffee scene", "Rainy climate", "High state income tax"] },
+  "Minneapolis, MN":    { idx: 97, housing: 1.15, food: 1.0, transport: 1.0, utilities: 1.05, healthcare: 1.05, salary_adj: { tech: 1.1, finance: 1.1, healthcare: 1.1, education: 1.0, creative: 1.0, trade: 1.0, other: 0.95 }, transit_score: 55, walkability: 65, safety: 65, sunshine: 55, qol_notes: ["Affordable for a major city", "Strong job market", "Harsh winters (avg -10°F)", "Great parks & lakes"] },
+  "Pittsburgh, PA":     { idx: 88, housing: 0.9, food: 0.95, transport: 0.9, utilities: 0.95, healthcare: 1.0, salary_adj: { tech: 1.05, finance: 1.0, healthcare: 1.05, education: 1.0, creative: 0.95, trade: 0.95, other: 0.9 }, transit_score: 52, walkability: 62, safety: 65, sunshine: 52, qol_notes: ["One of the most affordable big cities", "Growing tech & healthcare sector", "Cold winters", "Surprisingly great food scene"] },
+  "Raleigh, NC":        { idx: 96, housing: 1.2, food: 0.95, transport: 0.95, utilities: 0.9, healthcare: 0.98, salary_adj: { tech: 1.1, finance: 1.0, healthcare: 1.05, education: 0.95, creative: 0.95, trade: 0.95, other: 0.9 }, transit_score: 30, walkability: 38, safety: 72, sunshine: 80, qol_notes: ["Research Triangle tech hub", "Very affordable", "Car-dependent", "Warm climate"] },
+};
+
+const lifestyleState = { owner: true, car: true, cooking: true };
+
+function toggleLifestyle(btn, key) {
+  // Toggle pairs
+  const pairs = { renter: 'owner', owner: 'renter', car: 'transit', transit: 'car', dining: 'cooking', cooking: 'dining' };
+  const partner = pairs[key];
+  lifestyleState[key] = !lifestyleState[key];
+  if (lifestyleState[key] && partner) lifestyleState[partner] = false;
+  
+  document.querySelectorAll('.lifestyle-btn').forEach(b => {
+    const k = b.dataset.key;
+    b.classList.toggle('active', !!lifestyleState[k]);
+  });
+}
+
+function populateCities() {
+  const cities = Object.keys(CITIES).sort();
+  ['fromCity','toCity'].forEach((id, i) => {
+    const sel = document.getElementById(id);
+    cities.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c; opt.textContent = c;
+      if (i === 0 && c === 'Chicago, IL') opt.selected = true;
+      if (i === 1 && c === 'Austin, TX') opt.selected = true;
+      sel.appendChild(opt);
+    });
+  });
+}
+
+function swapCities() {
+  const f = document.getElementById('fromCity');
+  const t = document.getElementById('toCity');
+  [f.value, t.value] = [t.value, f.value];
+}
+
+function calcMonthlyBudget(city, income, household, lifestyle) {
+  const d = CITIES[city];
+  const monthly = income / 12;
+  const hhMult = household === '1' ? 1 : household === '2' ? 1.55 : household === '3' ? 1.9 : 2.3;
+
+  // Housing
+  let housingBase;
+  if (lifestyle.owner) {
+    housingBase = 2200 * d.housing * (hhMult > 1.5 ? 1.2 : 1);
+  } else {
+    housingBase = 1650 * d.housing * (hhMult > 1.5 ? 1.15 : 1);
+  }
+
+  // Food
+  let foodBase;
+  if (lifestyle.dining) {
+    foodBase = 900 * d.food * hhMult * 0.9;
+  } else {
+    foodBase = 500 * d.food * hhMult;
+  }
+
+  // Transport
+  let transportBase;
+  if (lifestyle.car) {
+    transportBase = 650 * d.transport;
+  } else {
+    transportBase = 150 * d.transport;
+  }
+
+  const utilities = 160 * d.utilities * (hhMult > 1.5 ? 1.2 : 1);
+  const healthcare = 380 * d.healthcare * (household === '1' ? 1 : 1.8);
+  const misc = 350 * (d.idx / 100) * (hhMult > 1 ? 1.3 : 1);
+
+  return {
+    housing: Math.round(housingBase),
+    food: Math.round(foodBase),
+    transport: Math.round(transportBase),
+    utilities: Math.round(utilities),
+    healthcare: Math.round(healthcare),
+    misc: Math.round(misc),
+    total: Math.round(housingBase + foodBase + transportBase + utilities + healthcare + misc)
+  };
+}
+
+function fmt(n) { return '$' + n.toLocaleString(); }
+
+function calculate() {
+  const fromCity = document.getElementById('fromCity').value;
+  const toCity = document.getElementById('toCity').value;
+  const income = parseFloat(document.getElementById('income').value) || 85000;
+  const household = document.getElementById('household').value;
+  const jobField = document.getElementById('jobField').value;
+
+  if (!fromCity || !toCity) { alert('Please select both cities.'); return; }
+  if (fromCity === toCity) { alert('Select two different cities.'); return; }
+
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('results').style.display = 'none';
+
+  setTimeout(() => {
+    document.getElementById('loading').style.display = 'none';
+    renderResults(fromCity, toCity, income, household, jobField);
+  }, 900);
+}
+
+function renderResults(fromCity, toCity, income, household, jobField) {
+  const from = CITIES[fromCity];
+  const to = CITIES[toCity];
+  const fromBudget = calcMonthlyBudget(fromCity, income, household, lifestyleState);
+  const toBudget = calcMonthlyBudget(toCity, income, household, lifestyleState);
+
+  const diff = toBudget.total - fromBudget.total;
+  const pct = Math.round((diff / fromBudget.total) * 100);
+  const isMoreExpensive = diff > 0;
+  const isSimilar = Math.abs(pct) < 8;
+
+  // Salary adjustment for destination
+  const salaryMult = to.salary_adj[jobField] / from.salary_adj[jobField];
+  const adjustedIncome = Math.round(income * salaryMult);
+  const salaryChange = adjustedIncome - income;
+
+  // Equivalent salary needed
+  const equivSalary = Math.round(income * (toBudget.total / fromBudget.total));
+
+  const categories = [
+    { label: 'Housing', icon: '🏠', from: fromBudget.housing, to: toBudget.housing },
+    { label: 'Food & Dining', icon: '🛒', from: fromBudget.food, to: toBudget.food },
+    { label: 'Transportation', icon: '🚗', from: fromBudget.transport, to: toBudget.transport },
+    { label: 'Utilities', icon: '⚡', from: fromBudget.utilities, to: toBudget.utilities },
+    { label: 'Healthcare', icon: '🏥', from: fromBudget.healthcare, to: toBudget.healthcare },
+    { label: 'Misc & Personal', icon: '🛍️', from: fromBudget.misc, to: toBudget.misc },
+  ];
+
+  const toName = toCity.split(',')[0];
+  const fromName = fromCity.split(',')[0];
+
+  let verdictClass, verdictText;
+  if (isSimilar) { verdictClass = 'verdict-similar'; verdictText = 'Similar cost'; }
+  else if (isMoreExpensive) { verdictClass = 'verdict-pricier'; verdictText = `${pct}% more expensive`; }
+  else { verdictClass = 'verdict-cheaper'; verdictText = `${Math.abs(pct)}% cheaper`; }
+
+  // QoL pills
+  const qolItems = [
+    { label: `Transit: ${to.transit_score}/100`, cls: to.transit_score > 65 ? 'dot-green' : to.transit_score > 40 ? 'dot-yellow' : 'dot-red' },
+    { label: `Walkability: ${to.walkability}/100`, cls: to.walkability > 70 ? 'dot-green' : to.walkability > 50 ? 'dot-yellow' : 'dot-red' },
+    { label: `Safety: ${to.safety}/100`, cls: to.safety > 70 ? 'dot-green' : to.safety > 55 ? 'dot-yellow' : 'dot-red' },
+    { label: `Sunshine: ${to.sunshine}/100`, cls: to.sunshine > 75 ? 'dot-green' : to.sunshine > 55 ? 'dot-yellow' : 'dot-red' },
+  ];
+
+  // Salary insight text
+  let salaryInsight;
+  if (Math.abs(salaryChange) < 3000) {
+    salaryInsight = `${jobField === 'tech' ? 'Tech' : 'Your field'} salaries in <strong>${toName}</strong> are roughly similar to ${fromName}. Your purchasing power change is driven almost entirely by the cost difference.`;
+  } else if (salaryChange > 0) {
+    salaryInsight = `${jobField === 'tech' ? 'Tech' : 'Your field'} salaries in <strong>${toName}</strong> tend to run higher — a similar role might pay around <strong>${fmt(adjustedIncome)}/yr</strong>. That offsets ${isMoreExpensive ? 'some of' : 'all of'} the cost increase.`;
+  } else {
+    salaryInsight = `${jobField === 'tech' ? 'Tech' : 'Your field'} salaries in <strong>${toName}</strong> tend to run lower — expect closer to <strong>${fmt(adjustedIncome)}/yr</strong> for a comparable role. Factor this into your budget math.`;
+  }
+
+  const breakevenMsg = isMoreExpensive
+    ? `To maintain your current lifestyle, you'd need to earn at least <strong>${fmt(equivSalary)}/yr</strong> in ${toName}.`
+    : `Even earning <strong>${fmt(equivSalary)}/yr</strong> in ${toName} would give you the same lifestyle — freeing up money to save or invest.`;
+
+  const html = `
+    <div class="results-header">
+      <div class="results-title">${fromName} → ${toName}</div>
+      <div class="verdict-badge ${verdictClass}">${verdictText}</div>
+    </div>
+
+    <div class="cost-headline">
+      <div class="cost-city">
+        <div class="cost-city-name">${fromName} / month</div>
+        <div class="cost-amount from">${fmt(fromBudget.total)}</div>
+        <div class="cost-sub">Your current estimated spend</div>
+      </div>
+      <div class="cost-arrow">
+        →<br>
+        <div class="diff-label" style="color:${isSimilar ? 'var(--yellow)' : isMoreExpensive ? 'var(--red)' : 'var(--accent)'}">
+          ${isMoreExpensive ? '+' : ''}${fmt(diff)}/mo
+        </div>
+      </div>
+      <div class="cost-city">
+        <div class="cost-city-name">${toName} / month</div>
+        <div class="cost-amount to">${fmt(toBudget.total)}</div>
+        <div class="cost-sub">Your estimated new spend</div>
+      </div>
+    </div>
+
+    <div class="breakdown-grid">
+      <div class="breakdown-card">
+        <div class="breakdown-label"><span class="icon">📊</span>Monthly breakdown</div>
+        ${categories.slice(0,3).map(c => {
+          const d2 = c.to - c.from;
+          const cls = Math.abs(d2) < 30 ? '' : d2 > 0 ? 'up' : 'down';
+          return `<div class="breakdown-row">
+            <span class="item">${c.icon} ${c.label}</span>
+            <div class="values">
+              <span class="from-val">${fmt(c.from)}</span>
+              <span class="to-val ${cls}">${fmt(c.to)}</span>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div class="breakdown-card">
+        <div class="breakdown-label"><span class="icon">📊</span>&nbsp;</div>
+        ${categories.slice(3).map(c => {
+          const d2 = c.to - c.from;
+          const cls = Math.abs(d2) < 20 ? '' : d2 > 0 ? 'up' : 'down';
+          return `<div class="breakdown-row">
+            <span class="item">${c.icon} ${c.label}</span>
+            <div class="values">
+              <span class="from-val">${fmt(c.from)}</span>
+              <span class="to-val ${cls}">${fmt(c.to)}</span>
+            </div>
+          </div>`;
+        }).join('')}
+        <div class="breakdown-row" style="margin-top:4px; padding-top:8px; border-top:1px solid var(--border2)">
+          <span class="item" style="font-weight:600; color:var(--text)">Total</span>
+          <div class="values">
+            <span class="from-val">${fmt(fromBudget.total)}</span>
+            <span class="to-val" style="color:var(--text); font-weight:600">${fmt(toBudget.total)}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="salary-insight">
+      <div class="insight-icon">💼</div>
+      <div class="insight-body">
+        <div class="insight-title">Salary reality check</div>
+        <div class="insight-text">${salaryInsight} ${breakevenMsg}</div>
+      </div>
+    </div>
+
+    <div class="breakdown-label" style="margin-bottom:10px"><span class="icon">✦</span>&nbsp; Quality of life in ${toName}</div>
+    <div class="qol-row">
+      ${qolItems.map(q => `<div class="qol-pill"><span class="dot ${q.cls}"></span>${q.label}</div>`).join('')}
+      ${to.qol_notes.map(n => `<div class="qol-pill" style="color:var(--text3)">· ${n}</div>`).join('')}
+    </div>
+
+    <div class="share-row">
+      <button class="share-btn" onclick="copyResult('${fromName}','${toName}',${fromBudget.total},${toBudget.total},${pct})">
+        📋 Copy results
+      </button>
+      <button class="share-btn" onclick="alert('Share feature coming soon — this is a beta!')">
+        🔗 Share link
+      </button>
+      <button class="share-btn" onclick="alert('Submit your actual budget and help us improve estimates for everyone!')">
+        ✏️ Submit my real numbers
+      </button>
+    </div>
+  `;
+
+  const el = document.getElementById('results');
+  el.innerHTML = html;
+  el.style.display = 'block';
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function copyResult(from, to, fromAmt, toAmt, pct) {
+  const sign = pct > 0 ? '+' : '';
+  const text = `Cost of living: ${from} → ${to}\nFrom: $${fromAmt.toLocaleString()}/mo → To: $${toAmt.toLocaleString()}/mo (${sign}${pct}%)\nCalculated at relocate.app`;
+  navigator.clipboard.writeText(text).then(() => alert('Copied to clipboard!'));
+}
+
+populateCities();
+</script>
+</body>
+</html>
