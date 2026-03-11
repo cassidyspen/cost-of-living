@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>re·locate — What does your life actually cost somewhere new?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div class="wrap">
+  <nav>
+    <a class="logo" href="/">re<span>·</span>locate</a>
+    <div class="nav-tag">Beta</div>
+  </nav>
+
+  <div class="hero">
+    <div class="hero-eyebrow">Real numbers. Not averages.</div>
+    <h1>What does your life <em>actually</em><br>cost somewhere new?</h1>
+    <p>Most cost-of-living calculators lie. They average everything and personalize nothing. This one doesn't.</p>
+  </div>
+
+  <div class="form-card">
+    <div class="form-section-title">Where are you moving?</div>
+    <div class="city-row">
+      <div class="field">
+        <label>Moving from</label>
+        <div class="city-input-wrap">
+          <input type="text" id="fromCityInput" placeholder="Type a city..." autocomplete="off">
+          <div class="autocomplete-dropdown" id="fromDropdown"></div>
+          <input type="hidden" id="fromCityName">
+          <input type="hidden" id="fromCountryName">
+        </div>
+      </div>
+      <button class="swap-btn" onclick="swapCities()" title="Swap cities">⇄</button>
+      <div class="field">
+        <label>Moving to</label>
+        <div class="city-input-wrap">
+          <input type="text" id="toCityInput" placeholder="Type a city..." autocomplete="off">
+          <div class="autocomplete-dropdown" id="toDropdown"></div>
+          <input type="hidden" id="toCityName">
+          <input type="hidden" id="toCountryName">
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section-title">Your profile</div>
+    <div class="profile-grid">
+      <div class="field">
+        <label>Annual income ($)</label>
+        <input type="number" id="income" placeholder="85,000" value="85000" min="0">
+      </div>
+      <div class="field">
+        <label>Household size</label>
+        <div class="select-wrap">
+          <select id="household">
+            <option value="1">Just me</option>
+            <option value="2">Me + partner</option>
+            <option value="3">Small family (3)</option>
+            <option value="4">Family (4+)</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Housing situation</label>
+        <div class="select-wrap">
+          <select id="housingType">
+            <option value="renter">Renting</option>
+            <option value="owner">Buying / own</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section-title">Your lifestyle</div>
+    <div class="lifestyle-grid">
+      <button class="lifestyle-btn active" onclick="toggleLifestyle(this, 'car')" data-key="car">
+        <span class="icon">🚗</span> Has a car
+      </button>
+      <button class="lifestyle-btn" onclick="toggleLifestyle(this, 'transit')" data-key="transit">
+        <span class="icon">🚇</span> Relies on transit
+      </button>
+      <button class="lifestyle-btn" onclick="toggleLifestyle(this, 'dining')" data-key="dining">
+        <span class="icon">🍽️</span> Eats out often
+      </button>
+      <button class="lifestyle-btn active" onclick="toggleLifestyle(this, 'cooking')" data-key="cooking">
+        <span class="icon">🥗</span> Mostly cooks at home
+      </button>
+    </div>
+
+    <button class="calc-btn" id="calcBtn" onclick="calculate()">
+      Calculate my real cost ↗
+    </button>
+  </div>
+
+  <div class="loading" id="loading">
+    <div class="loading-spinner"></div>
+    <p id="loadingText">Fetching real price data…</p>
+  </div>
+
+  <div id="results"></div>
+
+  <footer>
+    <div class="footer-note">
+      Prices from TravelTables · Quality of life from Teleport<br>
+      <a href="#">Methodology</a> · <a href="#">Submit your real numbers</a>
+    </div>
+    <div class="footer-note" style="text-align:right">
+      Built for people who are<br>actually thinking about moving.
+    </div>
+  </footer>
+</div>
+
+<script type="module">
+import { fetchAllCities, fetchCityPrices, fetchTeleportQoL, parsePrices } from './js/api.js';
+import { buildMonthlyBudget } from './js/calculator.js';
+import { renderResults, renderError } from './js/ui.js';
+
+let allCities = [];
+let fromCity = null;
+let toCity = null;
+const lifestyleState = { car: true, transit: false, dining: false, cooking: true };
+
+async function init() {
+  try {
+    allCities = await fetchAllCities();
+  } catch (e) {
+    console.error('Failed to load cities:', e);
+  }
+}
+init();
+
+function setupAutocomplete(inputId, dropdownId, onSelect) {
+  const input = document.getElementById(inputId);
+  const dropdown = document.getElementById(dropdownId);
+  let activeIndex = -1;
+  let debounceTimer;
+
+  input.addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      const q = input.value.trim().toLowerCase();
+      if (q.length < 2) { dropdown.classList.remove('open'); return; }
+
+      const matches = allCities
+        .filter(c =>
+          c.city_name.toLowerCase().startsWith(q) ||
+          c.city_name.toLowerCase().includes(q)
+        )
+        .sort((a, b) => {
+          const aStarts = a.city_name.toLowerCase().startsWith(q);
+          const bStarts = b.city_name.toLowerCase().startsWith(q);
+          if (aStarts && !bStarts) return -1;
+          if (!aStarts && bStarts) return 1;
+          return a.city_name.localeCompare(b.city_name);
+        })
+        .slice(0, 8);
+
+      if (!matches.length) {
+        if (!allCities.length) {
+          dropdown.innerHTML = '<div class="autocomplete-loading">Loading cities…</div>';
+          dropdown.classList.add('open');
+        } else {
+          dropdown.classList.remove('open');
+        }
+        return;
+      }
+
+      dropdown.innerHTML = matches.map((c, i) =>
+        `<div class="autocomplete-item" data-index="${i}" data-city="${c.city_name}" data-country="${c.country_name}">
+          <span>${c.city_name}</span>
+          <span class="city-country">${c.country_name}</span>
+        </div>`
+      ).join('');
+      dropdown.classList.add('open');
+      activeIndex = -1;
+
+      dropdown.querySelectorAll('.autocomplete-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const city = { city_name: item.dataset.city, country_name: item.dataset.country };
+          input.value = `${city.city_name}, ${city.country_name}`;
+          dropdown.classList.remove('open');
+          onSelect(city);
+        });
+      });
+    }, 150);
+  });
+
+  input.addEventListener('keydown', e => {
+    const items = dropdown.querySelectorAll('.autocomplete-item');
+    if (!items.length) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); activeIndex = Math.min(activeIndex + 1, items.length - 1); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); activeIndex = Math.max(activeIndex - 1, 0); }
+    else if (e.key === 'Enter' && activeIndex >= 0) { e.preventDefault(); items[activeIndex].click(); }
+    items.forEach((item, i) => item.classList.toggle('active', i === activeIndex));
+  });
+
+  document.addEventListener('click', e => {
+    if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+      dropdown.classList.remove('open');
+    }
+  });
+}
+
+setupAutocomplete('fromCityInput', 'fromDropdown', city => { fromCity = city; });
+setupAutocomplete('toCityInput', 'toDropdown', city => { toCity = city; });
+
+window.toggleLifestyle = function(btn, key) {
+  const pairs = { car: 'transit', transit: 'car', dining: 'cooking', cooking: 'dining' };
+  const partner = pairs[key];
+  lifestyleState[key] = !lifestyleState[key];
+  if (lifestyleState[key] && partner) lifestyleState[partner] = false;
+  document.querySelectorAll('.lifestyle-btn').forEach(b => {
+    b.classList.toggle('active', !!lifestyleState[b.dataset.key]);
+  });
+};
+
+window.swapCities = function() {
+  const fromInput = document.getElementById('fromCityInput');
+  const toInput = document.getElementById('toCityInput');
+  [fromInput.value, toInput.value] = [toInput.value, fromInput.value];
+  [fromCity, toCity] = [toCity, fromCity];
+};
+
+window.calculate = async function() {
+  if (!fromCity) { alert('Please select a city you\'re moving from.'); return; }
+  if (!toCity) { alert('Please select a city you\'re moving to.'); return; }
+  if (fromCity.city_name === toCity.city_name && fromCity.country_name === toCity.country_name) {
+    alert('Please select two different cities.');
+    return;
+  }
+
+  const income = parseFloat(document.getElementById('income').value) || 85000;
+  const household = document.getElementById('household').value;
+  const housingType = document.getElementById('housingType').value;
+
+  const btn = document.getElementById('calcBtn');
+  btn.disabled = true;
+  btn.textContent = 'Calculating…';
+
+  const loading = document.getElementById('loading');
+  const results = document.getElementById('results');
+  loading.style.display = 'block';
+  results.style.display = 'none';
+
+  const loadingText = document.getElementById('loadingText');
+  const steps = [
+    'Fetching prices for ' + fromCity.city_name + '…',
+    'Fetching prices for ' + toCity.city_name + '…',
+    'Looking up quality of life scores…',
+    'Crunching your numbers…',
+  ];
+  let step = 0;
+  const stepTimer = setInterval(() => {
+    if (step < steps.length) loadingText.textContent = steps[step++];
+  }, 700);
+
+  try {
+    const lifestyle = {
+      owner: housingType === 'owner',
+      car: lifestyleState.car,
+      dining: lifestyleState.dining,
+    };
+    const profile = { income, household, lifestyle };
+
+    const [fromRaw, toRaw, toQoL] = await Promise.all([
+      fetchCityPrices(fromCity.city_name, fromCity.country_name),
+      fetchCityPrices(toCity.city_name, toCity.country_name),
+      fetchTeleportQoL(toCity.city_name),
+    ]);
+
+    const fromPrices = parsePrices(fromRaw);
+    const toPrices = parsePrices(toRaw);
+
+    if (!fromPrices) throw new Error(`No price data found for ${fromCity.city_name}. Try a larger nearby city.`);
+    if (!toPrices) throw new Error(`No price data found for ${toCity.city_name}. Try a larger nearby city.`);
+
+    const fromBudget = buildMonthlyBudget(fromPrices, profile);
+    const toBudget = buildMonthlyBudget(toPrices, profile);
+
+    clearInterval(stepTimer);
+    loading.style.display = 'none';
+    btn.disabled = false;
+    btn.textContent = 'Calculate my real cost ↗';
+
+    renderResults({
+      fromCity, toCity,
+      fromPrices, toPrices,
+      fromBudget, toBudget,
+      income,
+      fromQoL: null,
+      toQoL,
+    });
+
+  } catch (err) {
+    clearInterval(stepTimer);
+    loading.style.display = 'none';
+    btn.disabled = false;
+    btn.textContent = 'Calculate my real cost ↗';
+    renderError(err.message || 'Something went wrong. Please try again.');
+    console.error(err);
+  }
+};
+</script>
+</body>
+</html>
