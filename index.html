@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>re·locate — What does your life actually cost somewhere new?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div class="wrap">
+  <nav>
+    <a class="logo" href="/">re<span>·</span>locate</a>
+    <div class="nav-tag">Beta</div>
+  </nav>
+
+  <div class="hero">
+    <div class="hero-eyebrow">Real numbers. Not averages.</div>
+    <h1>What does your life <em>actually</em><br>cost somewhere new?</h1>
+    <p>Most cost-of-living calculators lie. They average everything and personalize nothing. This one doesn't.</p>
+  </div>
+
+  <div class="form-card">
+    <div class="form-section-title">Where are you moving?</div>
+    <div class="city-row">
+      <div class="field">
+        <label>Moving from</label>
+        <div class="city-input-wrap">
+          <input type="text" id="fromCityInput" placeholder="Type a city..." autocomplete="off">
+          <div class="autocomplete-dropdown" id="fromDropdown"></div>
+        </div>
+      </div>
+      <button class="swap-btn" onclick="swapCities()" title="Swap cities">⇄</button>
+      <div class="field">
+        <label>Moving to</label>
+        <div class="city-input-wrap">
+          <input type="text" id="toCityInput" placeholder="Type a city..." autocomplete="off">
+          <div class="autocomplete-dropdown" id="toDropdown"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section-title">Your profile</div>
+    <div class="profile-grid">
+      <div class="field">
+        <label>Annual income ($)</label>
+        <input type="number" id="income" placeholder="85,000" value="85000" min="0">
+      </div>
+      <div class="field">
+        <label>Household size</label>
+        <div class="select-wrap">
+          <select id="household">
+            <option value="1">Just me</option>
+            <option value="2">Me + partner</option>
+            <option value="3">Small family (3)</option>
+            <option value="4">Family (4+)</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Housing situation</label>
+        <div class="select-wrap">
+          <select id="housingType">
+            <option value="renter">Renting</option>
+            <option value="owner">Buying / own</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section-title">Your lifestyle</div>
+    <div class="lifestyle-grid">
+      <button class="lifestyle-btn active" onclick="toggleLifestyle(this, 'car')" data-key="car">
+        <span class="icon">🚗</span> Has a car
+      </button>
+      <button class="lifestyle-btn" onclick="toggleLifestyle(this, 'transit')" data-key="transit">
+        <span class="icon">🚇</span> Relies on transit
+      </button>
+      <button class="lifestyle-btn" onclick="toggleLifestyle(this, 'dining')" data-key="dining">
+        <span class="icon">🍽️</span> Eats out often
+      </button>
+      <button class="lifestyle-btn active" onclick="toggleLifestyle(this, 'cooking')" data-key="cooking">
+        <span class="icon">🥗</span> Mostly cooks at home
+      </button>
+    </div>
+
+    <button class="calc-btn" id="calcBtn" onclick="calculate()">
+      Calculate my real cost ↗
+    </button>
+  </div>
+
+  <div class="loading" id="loading">
+    <div class="loading-spinner"></div>
+    <p id="loadingText">Fetching real price data…</p>
+  </div>
+
+  <div id="results"></div>
+
+  <footer>
+    <div class="footer-note">
+      Prices from TravelTables · Quality of life from Teleport<br>
+      <a href="#">Methodology</a> · <a href="#">Submit your real numbers</a>
+    </div>
+    <div class="footer-note" style="text-align:right">
+      Built for people who are<br>actually thinking about moving.
+    </div>
+  </footer>
+</div>
+
+<script>
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let allCities = [];
+let fromCity = null;
+let toCity = null;
+const lifestyleState = { car: true, transit: false, dining: false, cooking: true };
+const _cache = {};
+
+// ─── API ──────────────────────────────────────────────────────────────────────
+async function cached(key, fn) {
+  if (_cache[key]) return _cache[key];
+  const result = await fn();
+  _cache[key] = result;
+  return result;
+}
+
+async function fetchAllCities() {
+  return cached('all_cities', async () => {
+    const res = await fetch('/api/compare?type=cities');
+    if (!res.ok) throw new Error('Failed to load cities');
+    const data = await res.json();
+    return data.cities || [];
+  });
+}
+
+async function fetchCityPrices(cityName, countryName) {
+  const key = 'prices_' + cityName + '_' + countryName;
+  return cached(key, async () => {
+    const res = await fetch('/api/compare?type=prices&city_name=' + encodeURIComponent(cityName) + '&country_name=' + encodeURIComponent(countryName));
+    if (!res.ok) throw new Error('Failed to load prices for ' + cityName);
+    return res.json();
+  });
+}
+
+async function fetchTeleportQoL(cityName) {
+  return cached('teleport_' + cityName, async () => {
+    try {
+      const searchRes = await fetch('https://api.teleport.org/api/cities/?search=' + encodeURIComponent(cityName) + '&limit=1');
+      const searchData = await searchRes.json();
+      const embedded = searchData && searchData._embedded && searchData._embedded['city:search-results'];
+      if (!embedded || !embedded.length) return null;
+      const cityUrl = embedded[0]._links['city:item'].href;
+      const cityRes = await fetch(cityUrl);
+      const cityData = await cityRes.json();
+      const uaUrl = cityData._links && cityData._links['city:urban_area'] && cityData._links['city:urban_area'].href;
+      if (!uaUrl) return null;
+      const scoresRes = await fetch(uaUrl + 'scores/');
+      const scoresData = await scoresRes.json();
+      const scores = {};
+      (scoresData.categories || []).forEach(function(c) {
+        scores[c.name] = Math.round(c.score_out_of_10 * 10);
+      });
+      return scores;
+    } catch(e) {
+      return null;
+    }
+  });
+}
+
+function parsePrices(data) {
+  if (!data || !data.prices) return null;
+  function get(name) {
+    const item = data.prices.find(function(p) {
+      return p.item_name.toLowerCase().includes(name.toLowerCase());
+    });
+    return item ? item.avg : null;
+  }
+  return {
+    currency: (data.prices[0] && data.prices[0].currency_code) || 'USD',
+    city: data.city_name,
+    country: data.country_name,
+    rent1br_center: get('1 bedroom apartment in city centre') || get('1 bedroom'),
+    rent1br_outside: get('1 bedroom apartment outside'),
+    rent3br_center: get('3 bedrooms apartment in city centre') || get('3 bedroom'),
+    rent3br_outside: get('3 bedrooms apartment outside'),
+    meal_cheap: get('inexpensive restaurant') || get('meal, inexpensive'),
+    meal_midrange: get('mid-range restaurant') || get('meal for 2'),
+    groceries_milk: get('milk'),
+    groceries_bread: get('bread'),
+    groceries_eggs: get('eggs'),
+    groceries_chicken: get('chicken'),
+    groceries_apples: get('apples'),
+    transit_ticket: get('one-way ticket') || get('local transport'),
+    transit_monthly: get('monthly pass'),
+    taxi_start: get('taxi start'),
+    gas_per_liter: get('gasoline') || get('gas'),
+    utilities_basic: get('basic (electricity') || get('utilities'),
+    internet: get('internet'),
+    mobile: get('mobile') || get('prepaid'),
+    avg_net_salary: get('average monthly net salary') || get('net salary'),
+    raw: data.prices,
+  };
+}
+
+// ─── CALCULATOR ───────────────────────────────────────────────────────────────
+function buildMonthlyBudget(prices, profile) {
+  const hhMultMap = {'1':1,'2':1.55,'3':1.9,'4':2.3};
+  const hhMult = hhMultMap[profile.household] || 1;
+  const lifestyle = profile.lifestyle;
+
+  // Housing
+  let housing;
+  if (lifestyle.owner) {
+    const base = (profile.household === '1' || profile.household === '2')
+      ? (prices.rent1br_center || (prices.rent1br_outside ? prices.rent1br_outside * 1.2 : null) || 1500)
+      : (prices.rent3br_outside || (prices.rent3br_center ? prices.rent3br_center * 0.85 : null) || 2200);
+    housing = Math.round(base * 1.2);
+  } else {
+    const base = profile.household === '1'
+      ? (prices.rent1br_outside || (prices.rent1br_center ? prices.rent1br_center * 0.85 : null) || 1200)
+      : profile.household === '2'
+      ? (prices.rent1br_center || 1600)
+      : (prices.rent3br_outside || (prices.rent3br_center ? prices.rent3br_center * 0.85 : null) || 2000);
+    housing = Math.round(base);
+  }
+
+  // Food
+  const groceryBasket = [
+    (prices.groceries_milk || 1.5) * 8,
+    (prices.groceries_bread || 2) * 4,
+    (prices.groceries_eggs || 3) * 4,
+    (prices.groceries_chicken || 8) * 3,
+    (prices.groceries_apples || 2) * 3,
+  ].reduce(function(a,b){return a+b;},0) * 4;
+
+  let food;
+  if (lifestyle.dining) {
+    food = Math.round((prices.meal_cheap || 12) * 20 * hhMult * 0.7 + groceryBasket * hhMult * 0.4);
+  } else {
+    food = Math.round(groceryBasket * hhMult + (prices.meal_cheap || 12) * 4 * hhMult * 0.5);
+  }
+
+  // Transport
+  let transport;
+  if (lifestyle.car) {
+    transport = Math.round((prices.gas_per_liter || 1.2) * 60 + 400);
+  } else {
+    const pass = prices.transit_monthly || (prices.transit_ticket || 2.5) * 40;
+    transport = Math.round(pass + (prices.taxi_start || 3) * 4);
+  }
+
+  // Utilities
+  const utilities = Math.round(
+    (prices.utilities_basic || 150) * (hhMult > 1.5 ? 1.2 : 1) +
+    (prices.internet || 50) +
+    (prices.mobile || 30) * Math.min(hhMult, 2)
+  );
+
+  // Misc
+  const signals = [
+    prices.meal_cheap ? prices.meal_cheap / 12 : null,
+    prices.transit_ticket ? prices.transit_ticket / 2.5 : null,
+    prices.groceries_milk ? prices.groceries_milk / 1.5 : null,
+  ].filter(Boolean);
+  const costLevel = signals.length ? signals.reduce(function(a,b){return a+b;},0) / signals.length : 1;
+  const misc = Math.round(300 * costLevel * (hhMult > 1 ? 1.3 : 1));
+
+  const total = housing + food + transport + utilities + misc;
+  return { housing, food, transport, utilities, misc, total };
+}
+
+function fmt(n, currency) {
+  if (n == null || isNaN(n)) return '—';
+  currency = currency || 'USD';
+  try {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency, maximumFractionDigits: 0 }).format(n);
+  } catch(e) {
+    return '$' + Math.round(n).toLocaleString();
+  }
+}
+
+// ─── UI ───────────────────────────────────────────────────────────────────────
+function renderResults(fromCity, toCity, fromPrices, toPrices, fromBudget, toBudget, income, toQoL) {
+  const diff = toBudget.total - fromBudget.total;
+  const pct = Math.round((diff / fromBudget.total) * 100);
+  const isMoreExpensive = diff > 0;
+  const isSimilar = Math.abs(pct) < 8;
+  const equivSalary = Math.round(income * (toBudget.total / fromBudget.total));
+
+  const fromName = fromCity.city_name;
+  const toName = toCity.city_name;
+  const toCurrency = (toPrices && toPrices.currency) || 'USD';
+
+  let verdictClass, verdictText;
+  if (isSimilar) { verdictClass = 'verdict-similar'; verdictText = 'Similar cost of living'; }
+  else if (isMoreExpensive) { verdictClass = 'verdict-pricier'; verdictText = pct + '% more expensive'; }
+  else { verdictClass = 'verdict-cheaper'; verdictText = Math.abs(pct) + '% cheaper'; }
+
+  const categories = [
+    { label: 'Housing', icon: '🏠', from: fromBudget.housing, to: toBudget.housing },
+    { label: 'Food & Dining', icon: '🛒', from: fromBudget.food, to: toBudget.food },
+    { label: 'Transportation', icon: '🚗', from: fromBudget.transport, to: toBudget.transport },
+    { label: 'Utilities', icon: '⚡', from: fromBudget.utilities, to: toBudget.utilities },
+    { label: 'Misc & Personal', icon: '🛍️', from: fromBudget.misc, to: toBudget.misc },
+  ];
+
+  const catRows = categories.map(function(c) {
+    const d = c.to - c.from;
+    const cls = Math.abs(d) < c.from * 0.05 ? '' : d > 0 ? 'up' : 'down';
+    const arrow = Math.abs(d) < c.from * 0.05 ? '' : d > 0 ? '↑' : '↓';
+    return '<div class="breakdown-row"><span class="item">' + c.icon + ' ' + c.label + '</span><div class="values"><span class="from-val">' + fmt(c.from) + '</span><span class="to-val ' + cls + '">' + arrow + fmt(c.to) + '</span></div></div>';
+  }).join('');
+
+  const detailItems = [
+    { label: '🍽️ Cheap meal', from: fromPrices.meal_cheap, to: toPrices.meal_cheap },
+    { label: '🥛 Milk (1L)', from: fromPrices.groceries_milk, to: toPrices.groceries_milk },
+    { label: '🍞 Bread (500g)', from: fromPrices.groceries_bread, to: toPrices.groceries_bread },
+    { label: '🥚 Eggs (12)', from: fromPrices.groceries_eggs, to: toPrices.groceries_eggs },
+    { label: '🚌 Transit ticket', from: fromPrices.transit_ticket, to: toPrices.transit_ticket },
+    { label: '⛽ Gas (1L)', from: fromPrices.gas_per_liter, to: toPrices.gas_per_liter },
+    { label: '🌐 Internet/mo', from: fromPrices.internet, to: toPrices.internet },
+  ].filter(function(i){ return i.from != null && i.to != null; });
+
+  const detailRows = detailItems.map(function(item) {
+    const d = item.to - item.from;
+    const cls = Math.abs(d) < item.from * 0.05 ? '' : d > 0 ? 'up' : 'down';
+    return '<div class="breakdown-row"><span class="item">' + item.label + '</span><div class="values"><span class="from-val">' + fmt(item.from) + '</span><span class="to-val ' + cls + '">' + fmt(item.to) + '</span></div></div>';
+  }).join('') || '<p style="color:var(--text3);font-size:13px">Price details unavailable.</p>';
+
+  let avgSalaryNote = '';
+  if (toPrices.avg_net_salary) {
+    avgSalaryNote = ' The average net salary in <strong>' + toName + '</strong> is about <strong>' + fmt(toPrices.avg_net_salary * 12, toCurrency) + '/yr</strong>.';
+  }
+
+  let salaryText;
+  if (isMoreExpensive) {
+    salaryText = 'To maintain your current lifestyle in <strong>' + toName + '</strong>, you\'d need at least <strong>' + fmt(equivSalary) + '/yr</strong>.' + avgSalaryNote;
+  } else if (isSimilar) {
+    salaryText = 'Your cost of living would be roughly the same in <strong>' + toName + '</strong>. Your current income should cover a similar lifestyle.' + avgSalaryNote;
+  } else {
+    salaryText = '<strong>' + toName + '</strong> is cheaper — you\'d only need <strong>' + fmt(equivSalary) + '/yr</strong>, potentially freeing up <strong>' + fmt(income - equivSalary) + '/yr</strong>.' + avgSalaryNote;
+  }
+
+  const scoreMap = {'Housing':'🏠','Cost of Living':'💰','Commute':'🚇','Safety':'🛡️','Healthcare':'🏥','Education':'🎓','Environmental Quality':'🌿','Economy':'📈','Internet Access':'📡','Leisure & Culture':'🎭','Outdoors':'🌲'};
+  let qolHtml = '';
+  if (toQoL && Object.keys(toQoL).length) {
+    const pills = Object.entries(toQoL).slice(0,10).map(function(entry) {
+      const name = entry[0], score = entry[1];
+      const cls = score >= 70 ? 'dot-green' : score >= 45 ? 'dot-yellow' : 'dot-red';
+      const icon = scoreMap[name] || '✦';
+      return '<div class="qol-pill"><span class="dot ' + cls + '"></span>' + icon + ' ' + name + ': ' + score + '/100</div>';
+    }).join('');
+    qolHtml = '<div class="breakdown-label" style="margin-bottom:10px"><span class="icon">✦</span>&nbsp; Quality of life in ' + toName + '</div><div class="qol-row">' + pills + '</div>';
+  }
+
+  const diffColor = isSimilar ? 'var(--yellow)' : isMoreExpensive ? 'var(--red)' : 'var(--accent)';
+  const diffLabel = (isMoreExpensive ? '+' : '') + fmt(diff) + '/mo';
+
+  document.getElementById('results').innerHTML = `
+    <div class="results-header">
+      <div class="results-title">${fromName} → ${toName}</div>
+      <div class="verdict-badge ${verdictClass}">${verdictText}</div>
+    </div>
+    <div class="cost-headline">
+      <div class="cost-city">
+        <div class="cost-city-name">${fromName}</div>
+        <div class="cost-city-country">${fromCity.country_name}</div>
+        <div class="cost-amount from">${fmt(fromBudget.total)}</div>
+        <div class="cost-sub">estimated / month</div>
+      </div>
+      <div class="cost-arrow-col">
+        <div class="cost-arrow">→</div>
+        <div class="diff-label" style="color:${diffColor}">${diffLabel}</div>
+      </div>
+      <div class="cost-city">
+        <div class="cost-city-name">${toName}</div>
+        <div class="cost-city-country">${toCity.country_name}</div>
+        <div class="cost-amount to">${fmt(toBudget.total)}</div>
+        <div class="cost-sub">estimated / month</div>
+      </div>
+    </div>
+    <div class="breakdown-grid">
+      <div class="breakdown-card">
+        <div class="breakdown-label"><span class="icon">📊</span> Monthly breakdown</div>
+        ${catRows}
+        <div class="breakdown-row total-row">
+          <span class="item">Total</span>
+          <div class="values">
+            <span class="from-val">${fmt(fromBudget.total)}</span>
+            <span class="to-val" style="color:var(--text);font-weight:600">${fmt(toBudget.total)}</span>
+          </div>
+        </div>
+      </div>
+      <div class="breakdown-card">
+        <div class="breakdown-label"><span class="icon">🔍</span> Real price samples</div>
+        ${detailRows}
+      </div>
+    </div>
+    <div class="salary-insight">
+      <div class="insight-icon">💼</div>
+      <div class="insight-body">
+        <div class="insight-title">Salary reality check</div>
+        <div class="insight-text">${salaryText}</div>
+        <a class="insight-link" href="https://www.glassdoor.com/Salaries/index.htm" target="_blank" rel="noopener">See salaries by job title on Glassdoor ↗</a>
+      </div>
+    </div>
+    ${qolHtml}
+    <div class="share-row">
+      <button class="share-btn" onclick="copyResult('${fromName}','${toName}',${fromBudget.total},${toBudget.total},${pct})">📋 Copy results</button>
+      <a class="share-btn" href="https://www.glassdoor.com/Salaries/index.htm" target="_blank" rel="noopener">💼 Salaries on Glassdoor ↗</a>
+      <button class="share-btn" onclick="window.scrollTo({top:0,behavior:'smooth'})">↩ New comparison</button>
+    </div>
+  `;
+
+  document.getElementById('results').style.display = 'block';
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderError(message) {
+  document.getElementById('results').innerHTML = '<div class="error-card"><div class="error-icon">⚠️</div><div class="error-title">Something went wrong</div><div class="error-text">' + message + '</div></div>';
+  document.getElementById('results').style.display = 'block';
+}
+
+window.copyResult = function(from, to, fromAmt, toAmt, pct) {
+  const sign = pct > 0 ? '+' : '';
+  navigator.clipboard.writeText('Cost of living: ' + from + ' → ' + to + '\nFrom: ' + fmt(fromAmt) + '/mo → To: ' + fmt(toAmt) + '/mo (' + sign + pct + '%)\nCalculated at re-locate.app');
+  alert('Copied!');
+};
+
+// ─── AUTOCOMPLETE ─────────────────────────────────────────────────────────────
+function setupAutocomplete(inputId, dropdownId, onSelect) {
+  const input = document.getElementById(inputId);
+  const dropdown = document.getElementById(dropdownId);
+  let activeIndex = -1;
+  let debounceTimer;
+
+  input.addEventListener('input', function() {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(function() {
+      const q = input.value.trim().toLowerCase();
+      if (q.length < 2) { dropdown.classList.remove('open'); return; }
+
+      if (!allCities.length) {
+        dropdown.innerHTML = '<div class="autocomplete-loading">Loading cities…</div>';
+        dropdown.classList.add('open');
+        return;
+      }
+
+      const matches = allCities
+        .filter(function(c) {
+          return c.city_name.toLowerCase().startsWith(q) || c.city_name.toLowerCase().includes(q);
+        })
+        .sort(function(a, b) {
+          const aS = a.city_name.toLowerCase().startsWith(q);
+          const bS = b.city_name.toLowerCase().startsWith(q);
+          if (aS && !bS) return -1;
+          if (!aS && bS) return 1;
+          return a.city_name.localeCompare(b.city_name);
+        })
+        .slice(0, 8);
+
+      if (!matches.length) { dropdown.classList.remove('open'); return; }
+
+      dropdown.innerHTML = matches.map(function(c, i) {
+        return '<div class="autocomplete-item" data-index="' + i + '" data-city="' + c.city_name + '" data-country="' + c.country_name + '"><span>' + c.city_name + '</span><span class="city-country">' + c.country_name + '</span></div>';
+      }).join('');
+      dropdown.classList.add('open');
+      activeIndex = -1;
+
+      dropdown.querySelectorAll('.autocomplete-item').forEach(function(item) {
+        item.addEventListener('click', function() {
+          const city = { city_name: item.dataset.city, country_name: item.dataset.country };
+          input.value = city.city_name + ', ' + city.country_name;
+          dropdown.classList.remove('open');
+          onSelect(city);
+        });
+      });
+    }, 150);
+  });
+
+  input.addEventListener('keydown', function(e) {
+    const items = dropdown.querySelectorAll('.autocomplete-item');
+    if (!items.length) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); activeIndex = Math.min(activeIndex + 1, items.length - 1); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); activeIndex = Math.max(activeIndex - 1, 0); }
+    else if (e.key === 'Enter' && activeIndex >= 0) { e.preventDefault(); items[activeIndex].click(); }
+    items.forEach(function(item, i) { item.classList.toggle('active', i === activeIndex); });
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!input.contains(e.target) && !dropdown.contains(e.target)) dropdown.classList.remove('open');
+  });
+}
+
+setupAutocomplete('fromCityInput', 'fromDropdown', function(city) { fromCity = city; });
+setupAutocomplete('toCityInput', 'toDropdown', function(city) { toCity = city; });
+
+// ─── LIFESTYLE ────────────────────────────────────────────────────────────────
+window.toggleLifestyle = function(btn, key) {
+  const pairs = { car: 'transit', transit: 'car', dining: 'cooking', cooking: 'dining' };
+  const partner = pairs[key];
+  lifestyleState[key] = !lifestyleState[key];
+  if (lifestyleState[key] && partner) lifestyleState[partner] = false;
+  document.querySelectorAll('.lifestyle-btn').forEach(function(b) {
+    b.classList.toggle('active', !!lifestyleState[b.dataset.key]);
+  });
+};
+
+window.swapCities = function() {
+  const fromInput = document.getElementById('fromCityInput');
+  const toInput = document.getElementById('toCityInput');
+  const tmpVal = fromInput.value;
+  fromInput.value = toInput.value;
+  toInput.value = tmpVal;
+  const tmpCity = fromCity;
+  fromCity = toCity;
+  toCity = tmpCity;
+};
+
+// ─── CALCULATE ────────────────────────────────────────────────────────────────
+window.calculate = async function() {
+  if (!fromCity) { alert('Please select a city you\'re moving from.'); return; }
+  if (!toCity) { alert('Please select a city you\'re moving to.'); return; }
+  if (fromCity.city_name === toCity.city_name && fromCity.country_name === toCity.country_name) {
+    alert('Please select two different cities.'); return;
+  }
+
+  const income = parseFloat(document.getElementById('income').value) || 85000;
+  const household = document.getElementById('household').value;
+  const housingType = document.getElementById('housingType').value;
+
+  const btn = document.getElementById('calcBtn');
+  btn.disabled = true;
+  btn.textContent = 'Calculating…';
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('results').style.display = 'none';
+
+  const steps = ['Fetching prices for ' + fromCity.city_name + '…', 'Fetching prices for ' + toCity.city_name + '…', 'Looking up quality of life scores…', 'Crunching your numbers…'];
+  let step = 0;
+  const stepTimer = setInterval(function() {
+    if (step < steps.length) document.getElementById('loadingText').textContent = steps[step++];
+  }, 700);
+
+  try {
+    const lifestyle = { owner: housingType === 'owner', car: lifestyleState.car, dining: lifestyleState.dining };
+    const profile = { income, household, lifestyle };
+
+    const results = await Promise.all([
+      fetchCityPrices(fromCity.city_name, fromCity.country_name),
+      fetchCityPrices(toCity.city_name, toCity.country_name),
+      fetchTeleportQoL(toCity.city_name),
+    ]);
+
+    const fromPrices = parsePrices(results[0]);
+    const toPrices = parsePrices(results[1]);
+    const toQoL = results[2];
+
+    if (!fromPrices) throw new Error('No price data found for ' + fromCity.city_name + '. Try a larger nearby city.');
+    if (!toPrices) throw new Error('No price data found for ' + toCity.city_name + '. Try a larger nearby city.');
+
+    const fromBudget = buildMonthlyBudget(fromPrices, profile);
+    const toBudget = buildMonthlyBudget(toPrices, profile);
+
+    clearInterval(stepTimer);
+    document.getElementById('loading').style.display = 'none';
+    btn.disabled = false;
+    btn.textContent = 'Calculate my real cost ↗';
+
+    renderResults(fromCity, toCity, fromPrices, toPrices, fromBudget, toBudget, income, toQoL);
+
+  } catch(err) {
+    clearInterval(stepTimer);
+    document.getElementById('loading').style.display = 'none';
+    btn.disabled = false;
+    btn.textContent = 'Calculate my real cost ↗';
+    renderError(err.message || 'Something went wrong. Please try again.');
+    console.error(err);
+  }
+};
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+fetchAllCities().then(function(cities) {
+  allCities = cities;
+}).catch(function(e) {
+  console.error('Failed to load cities:', e);
+});
+</script>
+</body>
+</html>
