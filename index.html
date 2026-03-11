@@ -464,15 +464,17 @@ function setupAutocomplete(inputId, dropdownId, onSelect) {
       if (!matches.length) { dropdown.classList.remove('open'); return; }
 
       dropdown.innerHTML = matches.map(function(c, i) {
-        return '<div class="autocomplete-item" data-index="' + i + '" data-city="' + c.city_name + '" data-country="' + c.country_name + '"><span>' + c.city_name + '</span><span class="city-country">' + c.country_name + '</span></div>';
+        const region = c.region_name ? c.region_name + ', ' : ''; return '<div class="autocomplete-item" data-index="' + i + '" data-city="' + c.city_name + '" data-country="' + c.country_name + '" data-region="' + (c.region_name || '') + '"><span>' + c.city_name + '</span><span class="city-country">' + region + c.country_name + '</span></div>';
       }).join('');
       dropdown.classList.add('open');
       activeIndex = -1;
 
       dropdown.querySelectorAll('.autocomplete-item').forEach(function(item) {
         item.addEventListener('click', function() {
-          const city = { city_name: item.dataset.city, country_name: item.dataset.country };
-          input.value = city.city_name + ', ' + city.country_name;
+          const city = { city_name: item.dataset.city, country_name: item.dataset.country, region_name: item.dataset.region };
+          const label = item.dataset.region ? item.dataset.city + ', ' + item.dataset.region : item.dataset.city + ', ' + item.dataset.country;
+          input.value = label;
+
           dropdown.classList.remove('open');
           onSelect(city);
         });
