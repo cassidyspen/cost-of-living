@@ -264,7 +264,9 @@ function buildMonthlyBudget(prices, profile) {
   // Transport
   let transport;
   if (lifestyle.car) {
-    transport = Math.round((prices.gas_per_liter || 1.2) * 60 + 400);
+    const gasMonthly = (prices.gas_per_liter || 1.2) * 3.785 * 40; // 40 gallons/mo converted from liters
+    const carFixed = Math.round((prices.rent1br_outside || 1500) * 0.15); // insurance+maintenance scales with city cost
+    transport = Math.round(gasMonthly + carFixed);
   } else {
     const pass = prices.transit_monthly || (prices.transit_ticket || 2.5) * 40;
     transport = Math.round(pass + (prices.taxi_start || 3) * 4);
