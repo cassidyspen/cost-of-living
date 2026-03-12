@@ -407,13 +407,16 @@ function renderResults(fromCity, toCity, fromPrices, toPrices, fromBudget, toBud
   const isMoreExpensive = diff > 0;
   const isSimilar = Math.abs(pct) < 8;
 
-  // Tax-aware equivalent salary: gross in destination that covers monthly expenses after tax
-  const toAnnualExpenses = toBudget.total * 12;
-  const toGrossNeeded = (toState && taxData) ? calcGrossForTakeHome(toAnnualExpenses, toState) : null;
-  const equivSalary = toGrossNeeded || Math.round(income * (toBudget.total / fromBudget.total));
-
   // Tax breakdowns
   const fromTax = (fromState && taxData) ? calcTax(income, fromState) : null;
+
+  // Tax-aware equivalent salary: gross in destination that maintains the same
+  // proportional take-home as origin (scaled by cost ratio), accounting for destination taxes
+  const costRatio = toBudget.total / fromBudget.total;
+  const fromTakeHome = fromTax ? fromTax.takeHome : income;
+  const scaledTakeHome = Math.round(fromTakeHome * costRatio);
+  const toGrossNeeded = (toState && taxData) ? calcGrossForTakeHome(scaledTakeHome, toState) : null;
+  const equivSalary = toGrossNeeded || Math.round(income * costRatio);
   const toTax = (toState && taxData && toGrossNeeded) ? calcTax(toGrossNeeded, toState) : null;
 
   let taxSectionHtml = '';
