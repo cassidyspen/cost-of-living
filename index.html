@@ -127,12 +127,31 @@ async function cached(key, fn) {
 }
 
 async function fetchAllCities() {
-  return cached('all_cities', async () => {
-    const res = await fetch('/api/compare?type=cities');
-    if (!res.ok) throw new Error('Failed to load cities');
-    const data = await res.json();
-    return data.cities || [];
-  });
+  const CACHE_KEY = 'relocate_cities_cache';
+  const CACHE_TTL = 1000 * 60 * 60 * 24; // 24 hours
+  try {
+    const cached_str = localStorage.getItem(CACHE_KEY);
+    if (cached_str) {
+      const cached_data = JSON.parse(cached_str);
+      if (Date.now() - cached_data.timestamp < CACHE_TTL) {
+        return cached_data.cities;
+      }
+    }
+  } catch(e) {}
+
+  const res = await fetch('/api/compare?type=cities');
+  if (!res.ok) throw new Error('Failed to load cities');
+  const data = await res.json();
+  const cities = data.cities || [];
+
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({
+      cities: cities,
+      timestamp: Date.now()
+    }));
+  } catch(e) {}
+
+  return cities;
 }
 
 async function fetchCityPrices(cityName, countryName) {
