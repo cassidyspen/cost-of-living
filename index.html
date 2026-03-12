@@ -557,6 +557,7 @@ window.calculate = async function() {
 
     const fromPrices = parsePrices(results[0]);
     const toPrices = parsePrices(results[1]);
+    console.log('Raw San Diego prices:', JSON.stringify(results[1]).slice(0, 1000));
     const toQoL = results[2];
 
     if (!fromPrices) throw new Error('No price data found for ' + fromCity.city_name + '. Try a larger nearby city.');
@@ -585,7 +586,7 @@ window.calculate = async function() {
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 fetchAllCities().then(function(cities) {
   allCities = cities;
-  console.log('Cities response:', JSON.stringify(cities).slice(0, 300));
+  console.log('Cities sample:', cities[0]);
 }).catch(function(e) {
   console.error('Failed to load cities:', e);
 });
