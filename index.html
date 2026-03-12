@@ -611,7 +611,7 @@ function setupAutocomplete(inputId, dropdownId, onSelect) {
 
       dropdown.querySelectorAll('.autocomplete-item').forEach(function(item) {
         item.addEventListener('click', function() {
-          const city = { city_name: item.dataset.city, country_name: item.dataset.country, region_name: item.dataset.region };
+          const city = { city_name: item.dataset.city, country_name: item.dataset.country, state_code: item.dataset.region };
           const label = item.dataset.region ? item.dataset.city + ', ' + item.dataset.region : item.dataset.city + ', ' + item.dataset.country;
           input.value = label;
 

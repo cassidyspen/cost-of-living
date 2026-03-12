@@ -1,7 +1,9 @@
 import { readFileSync } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 
-const taxes = JSON.parse(readFileSync(join(process.cwd(), 'data/taxes.json'), 'utf8'));
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const taxes = JSON.parse(readFileSync(join(__dirname, '../data/taxes.json'), 'utf8'));
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
