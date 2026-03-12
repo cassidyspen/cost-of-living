@@ -188,40 +188,38 @@ async function fetchTeleportQoL(cityName) {
   });
 }
 
-function parsePrices(data) {
+ffunction parsePrices(data) {
   if (!data || !data.prices) return null;
-  function get(name) {
+  function get(fragment) {
     const item = data.prices.find(function(p) {
-      return p.item_name.toLowerCase().includes(name.toLowerCase());
+      return p.item_name.toLowerCase().includes(fragment.toLowerCase());
     });
-    if (!item) return null;
-    // Use USD value if available, otherwise fall back to avg
-    return item.usd ? parseFloat(item.usd.avg) : item.avg;
+    if (!item || !item.usd) return null;
+    return parseFloat(item.usd.avg);
   }
   return {
     currency: 'USD',
     city: data.city_name,
     country: data.country_name,
-    rent1br_center: get('1 bedroom apartment in city centre'),
-    rent1br_outside: get('1 bedroom apartment outside of centre'),
-    rent3br_center: get('3 bedrooms apartment in city centre'),
-    rent3br_outside: get('3 bedrooms apartment outside of centre'),
-    meal_cheap: get('inexpensive restaurant'),
-    meal_midrange: get('mid-range restaurant, three-course'),
-    groceries_milk: get('milk (regular)'),
-    groceries_bread: get('loaf of fresh white bread'),
-    groceries_eggs: get('eggs (regular)'),
-    groceries_chicken: get('chicken fillets'),
-    groceries_apples: get('apples'),
-    transit_ticket: get('one-way ticket (local transport)'),
-    transit_monthly: get('monthly pass (regular price)'),
-    taxi_start: get('taxi start (normal tariff)'),
-    gas_per_liter: get('gasoline (1 liter)'),
-    utilities_basic: get('basic (electricity, heating, cooling, water, garbage)'),
-    internet: get('internet (60 mbps'),
-    mobile: get('mobile phone monthly plan'),
-    avg_net_salary: get('average monthly net salary'),
-    raw: data.prices,
+    rent1br_center:    get('one bedroom apartment in city centre'),
+    rent1br_outside:   get('one bedroom apartment outside of city centre'),
+    rent3br_center:    get('three bedroom apartment in city centre'),
+    rent3br_outside:   get('three bedroom apartment outside of city centre'),
+    meal_cheap:        get('meal in inexpensive restaurant'),
+    meal_midrange:     get('meal for 2 people, mid-range'),
+    groceries_milk:    get('milk, regular'),
+    groceries_bread:   get('loaf of fresh white bread'),
+    groceries_eggs:    get('eggs, 12 pack'),
+    groceries_chicken: get('chicken breasts'),
+    groceries_apples:  get('apples, 1 kg'),
+    transit_ticket:    get('one-way ticket'),
+    transit_monthly:   get('monthly pass'),
+    taxi_start:        get('taxi start'),
+    gas_per_liter:     get('gasoline, 1 liter'),
+    utilities_basic:   get('basic utilities for 85'),
+    internet:          get('internet, 60 mbps'),
+    mobile:            get('prepaid mobile tariff'),
+    avg_net_salary:    get('average monthly net salary'),
   };
 }
 
