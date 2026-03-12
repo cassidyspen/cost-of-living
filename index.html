@@ -585,7 +585,7 @@ window.calculate = async function() {
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 fetchAllCities().then(function(cities) {
   allCities = cities;
-  console.log('Sample city:', JSON.stringify(cities[0]));
+  console.log('Cities response:', JSON.stringify(cities).slice(0, 300));
 }).catch(function(e) {
   console.error('Failed to load cities:', e);
 });
