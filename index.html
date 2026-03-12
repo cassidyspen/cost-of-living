@@ -116,6 +116,7 @@ let allCities = [];
 let fromCity = null;
 let toCity = null;
 let taxData = null;
+let exchangeRates = null;
 const lifestyleState = { car: true, transit: false, dining: false, cooking: true };
 const _cache = {};
 
@@ -161,6 +162,17 @@ async function fetchTaxData() {
       const res = await fetch('/api/taxes');
       if (!res.ok) return null;
       return res.json();
+    } catch(e) { return null; }
+  });
+}
+
+async function fetchExchangeRates() {
+  return cached('exchange_rates', async () => {
+    try {
+      const res = await fetch('https://open.er-api.com/v6/latest/USD');
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data.rates || null;
     } catch(e) { return null; }
   });
 }
@@ -363,6 +375,59 @@ function calcGrossForTakeHome(targetTakeHome, stateCode) {
   return Math.round((lo + hi) / 2);
 }
 
+function calcCountryTax(grossLocal, countryData) {
+  const incomeTax = calcBracketTax(grossLocal, countryData.brackets || []);
+  const socialBrackets = (countryData.social && countryData.social.brackets) || [];
+  const social = calcBracketTax(grossLocal, socialBrackets);
+  const total = incomeTax + social;
+  return {
+    incomeTax: Math.round(incomeTax),
+    social: Math.round(social),
+    total: Math.round(total),
+    takeHome: Math.round(grossLocal - total),
+    socialLabel: (countryData.social && countryData.social.label) || 'Social contributions',
+    noIncomeTax: !countryData.brackets || !countryData.brackets.length,
+    noSocial: !socialBrackets.length,
+  };
+}
+
+function calcGrossForTakeHomeIntl(targetTakeHome, countryData) {
+  let lo = targetTakeHome, hi = targetTakeHome * 3;
+  for (let i = 0; i < 60; i++) {
+    const mid = (lo + hi) / 2;
+    const t = calcCountryTax(mid, countryData);
+    if (t.takeHome < targetTakeHome) lo = mid;
+    else hi = mid;
+  }
+  return Math.round((lo + hi) / 2);
+}
+
+function buildIntlTaxColHtml(label, gross, tax, currency) {
+  const pct = (n) => (n / gross * 100).toFixed(1) + '%';
+  const incomeTaxHtml = tax.noIncomeTax
+    ? 'None'
+    : '-' + fmt(tax.incomeTax, currency) + '<span class="tax-pct">' + pct(tax.incomeTax) + '</span>';
+  const socialHtml = tax.noSocial
+    ? tax.socialLabel
+    : '-' + fmt(tax.social, currency) + '<span class="tax-pct">' + pct(tax.social) + '</span>';
+  return `
+    <div class="tax-col">
+      <div class="tax-col-label">${label}</div>
+      <div class="tax-row">
+        <span>Income tax</span>
+        <span class="tax-val">${incomeTaxHtml}</span>
+      </div>
+      <div class="tax-row">
+        <span>${tax.socialLabel}</span>
+        <span class="tax-val">${socialHtml}</span>
+      </div>
+      <div class="tax-row tax-row-total">
+        <span>Take-home</span>
+        <span class="tax-val">${fmt(tax.takeHome, currency)}/yr</span>
+      </div>
+    </div>`;
+}
+
 function buildTaxColHtml(label, gross, tax) {
   const pct = (n) => (n / gross * 100).toFixed(1) + '%';
   const stateLabel = tax.stateName
@@ -407,30 +472,107 @@ function renderResults(fromCity, toCity, fromPrices, toPrices, fromBudget, toBud
   const isMoreExpensive = diff > 0;
   const isSimilar = Math.abs(pct) < 8;
 
-  // Tax breakdowns
-  const fromTax = (fromState && taxData) ? calcTax(income, fromState) : null;
+  // ── Tax helpers ──────────────────────────────────────────────────────────────
+  const isFromUS = !!fromState;
+  const isToUS = !!toState;
+  const fromCountryData = (!isFromUS && taxData && taxData.countries) ? taxData.countries[fromCity.country_name] : null;
+  const toCountryData = (!isToUS && taxData && taxData.countries) ? taxData.countries[toCity.country_name] : null;
 
-  // Tax-aware equivalent salary: gross in destination that maintains the same
-  // proportional take-home as origin (scaled by cost ratio), accounting for destination taxes
+  // 1 USD = rates[currency] local units
+  function toLocal(usd, currency) {
+    if (!exchangeRates || currency === 'USD' || !currency) return usd;
+    return usd * (exchangeRates[currency] || 1);
+  }
+  function toUSD(local, currency) {
+    if (!exchangeRates || currency === 'USD' || !currency) return local;
+    return local / (exchangeRates[currency] || 1);
+  }
+
+  // ── Origin take-home ──────────────────────────────────────────────────────
+  let fromTax = null;
+  let fromCurrencyCode = 'USD';
+  let fromGrossLocal = income;
+
+  if (isFromUS && taxData) {
+    fromTax = calcTax(income, fromState);
+  } else if (fromCountryData && exchangeRates) {
+    fromCurrencyCode = fromCountryData.currency;
+    fromGrossLocal = toLocal(income, fromCurrencyCode);
+    fromTax = calcCountryTax(fromGrossLocal, fromCountryData);
+  }
+
+  const fromTakeHomeUSD = fromTax
+    ? (isFromUS ? fromTax.takeHome : toUSD(fromTax.takeHome, fromCurrencyCode))
+    : income;
+
+  // ── Destination equivalent salary ─────────────────────────────────────────
   const costRatio = toBudget.total / fromBudget.total;
-  const fromTakeHome = fromTax ? fromTax.takeHome : income;
-  const scaledTakeHome = Math.round(fromTakeHome * costRatio);
-  const toGrossNeeded = (toState && taxData) ? calcGrossForTakeHome(scaledTakeHome, toState) : null;
-  const equivSalary = toGrossNeeded || Math.round(income * costRatio);
-  const toTax = (toState && taxData && toGrossNeeded) ? calcTax(toGrossNeeded, toState) : null;
+  const scaledTakeHomeUSD = fromTakeHomeUSD * costRatio;
 
+  let toTax = null;
+  let toGrossLocal = null;  // in destination currency
+  let toGrossUSD = null;    // USD equivalent for comparison
+  let toCurrencyCode = 'USD';
+
+  if (isToUS && taxData) {
+    const grossUS = calcGrossForTakeHome(Math.round(scaledTakeHomeUSD), toState);
+    if (grossUS) {
+      toGrossLocal = grossUS;
+      toGrossUSD = grossUS;
+      toTax = calcTax(grossUS, toState);
+    }
+  } else if (toCountryData && exchangeRates) {
+    toCurrencyCode = toCountryData.currency;
+    const targetLocal = toLocal(scaledTakeHomeUSD, toCurrencyCode);
+    const grossLocal = calcGrossForTakeHomeIntl(targetLocal, toCountryData);
+    if (grossLocal) {
+      toGrossLocal = grossLocal;
+      toGrossUSD = Math.round(toUSD(grossLocal, toCurrencyCode));
+      toTax = calcCountryTax(grossLocal, toCountryData);
+    }
+  }
+
+  const equivSalaryDisplay = toGrossLocal || Math.round(income * costRatio);
+
+  // ── Tax section HTML ──────────────────────────────────────────────────────
   let taxSectionHtml = '';
-  if (fromTax || toTax) {
-    const cols = [
-      fromTax ? buildTaxColHtml(fromCity.city_name + (fromState ? ', ' + fromState : ''), income, fromTax) : '',
-      toTax ? buildTaxColHtml(toCity.city_name + (toState ? ', ' + toState : '') + ' · ' + fmt(toGrossNeeded) + '/yr gross', toGrossNeeded, toTax) : '',
-    ].join('');
-    taxSectionHtml = `<div class="tax-grid">${cols}</div><div class="tax-disclaimer">Based on 2025 federal &amp; state rates · Single filer · Excludes local taxes &amp; credits · Estimates only</div>`;
+  let fromTaxCol = '';
+  let toTaxCol = '';
+
+  if (fromTax) {
+    if (isFromUS) {
+      fromTaxCol = buildTaxColHtml(fromCity.city_name + ', ' + fromState, income, fromTax);
+    } else {
+      fromTaxCol = buildIntlTaxColHtml(
+        fromCity.city_name + ' · ' + fmt(fromGrossLocal, fromCurrencyCode) + '/yr',
+        fromGrossLocal, fromTax, fromCurrencyCode
+      );
+    }
+  }
+
+  if (toTax && toGrossLocal) {
+    if (isToUS) {
+      toTaxCol = buildTaxColHtml(
+        toCity.city_name + ', ' + toState + ' · ' + fmt(toGrossLocal) + '/yr gross',
+        toGrossLocal, toTax
+      );
+    } else {
+      toTaxCol = buildIntlTaxColHtml(
+        toCity.city_name + ' · ' + fmt(toGrossLocal, toCurrencyCode) + '/yr',
+        toGrossLocal, toTax, toCurrencyCode
+      );
+    }
+  }
+
+  if (fromTaxCol || toTaxCol) {
+    const disclaimer = (isFromUS || isToUS)
+      ? 'Tax estimates only · 2025 rates · Single filer · Excludes local taxes &amp; credits'
+      : 'Tax estimates only · International rates are approximate · Consult a tax professional';
+    taxSectionHtml = `<div class="tax-grid">${fromTaxCol}${toTaxCol}</div><div class="tax-disclaimer">${disclaimer}</div>`;
   }
 
   const fromName = fromCity.city_name;
   const toName = toCity.city_name;
-  const toCurrency = (toPrices && toPrices.currency) || 'USD';
 
   let verdictClass, verdictText;
   if (isSimilar) { verdictClass = 'verdict-similar'; verdictText = 'Similar cost of living'; }
@@ -473,16 +615,25 @@ function renderResults(fromCity, toCity, fromPrices, toPrices, fromBudget, toBud
 
   let avgSalaryNote = '';
   if (toPrices.avg_net_salary) {
-    avgSalaryNote = ' The average net salary in <strong>' + toName + '</strong> is about <strong>' + fmt(toPrices.avg_net_salary * 12, toCurrency) + '/yr</strong>.';
+    const annualUSD = toPrices.avg_net_salary * 12;
+    const annualLocal = (toCurrencyCode !== 'USD' && exchangeRates)
+      ? toLocal(annualUSD, toCurrencyCode) : annualUSD;
+    const annualCurrency = (toCurrencyCode !== 'USD' && exchangeRates) ? toCurrencyCode : 'USD';
+    avgSalaryNote = ' The average net salary in <strong>' + toName + '</strong> is about <strong>' + fmt(annualLocal, annualCurrency) + '/yr</strong>.';
   }
+
+  const equivFormatted = fmt(equivSalaryDisplay, toCurrencyCode);
+  const usdNote = (toCurrencyCode !== 'USD' && toGrossUSD) ? ' (≈ ' + fmt(toGrossUSD) + ' USD)' : '';
 
   let salaryText;
   if (isMoreExpensive) {
-    salaryText = 'To maintain your current lifestyle in <strong>' + toName + '</strong>, you\'d need at least <strong>' + fmt(equivSalary) + '/yr</strong>.' + avgSalaryNote;
+    salaryText = 'To maintain your current lifestyle in <strong>' + toName + '</strong>, you\'d need at least <strong>' + equivFormatted + '/yr</strong>' + usdNote + '.' + avgSalaryNote;
   } else if (isSimilar) {
     salaryText = 'Your cost of living would be roughly the same in <strong>' + toName + '</strong>. Your current income should cover a similar lifestyle.' + avgSalaryNote;
   } else {
-    salaryText = '<strong>' + toName + '</strong> is cheaper — you\'d only need <strong>' + fmt(equivSalary) + '/yr</strong>, potentially freeing up <strong>' + fmt(income - equivSalary) + '/yr</strong>.' + avgSalaryNote;
+    const savingsText = (toCurrencyCode === 'USD')
+      ? ', potentially freeing up <strong>' + fmt(income - equivSalaryDisplay) + '/yr</strong>' : '';
+    salaryText = '<strong>' + toName + '</strong> is cheaper — you\'d only need <strong>' + equivFormatted + '/yr</strong>' + usdNote + savingsText + '.' + avgSalaryNote;
   }
 
   const scoreMap = {'Housing':'🏠','Cost of Living':'💰','Commute':'🚇','Safety':'🛡️','Healthcare':'🏥','Education':'🎓','Environmental Quality':'🌿','Economy':'📈','Internet Access':'📡','Leisure & Culture':'🎭','Outdoors':'🌲'};
@@ -692,17 +843,20 @@ window.calculate = async function() {
     const lifestyle = { owner: housingType === 'owner', car: lifestyleState.car, dining: lifestyleState.dining };
     const profile = { income, household, lifestyle };
 
+    const isIntl = fromCity.country_name !== 'United States' || toCity.country_name !== 'United States';
     const results = await Promise.all([
       fetchCityPrices(fromCity.city_name, fromCity.country_name),
       fetchCityPrices(toCity.city_name, toCity.country_name),
       fetchTeleportQoL(toCity.city_name),
       fetchTaxData(),
+      isIntl ? fetchExchangeRates() : Promise.resolve(null),
     ]);
 
     const fromPrices = parsePrices(results[0]);
     const toPrices = parsePrices(results[1]);
     const toQoL = results[2];
     taxData = results[3] || null;
+    exchangeRates = results[4] || null;
 
     if (!fromPrices) throw new Error('No price data found for ' + fromCity.city_name + '. Try a larger nearby city.');
     if (!toPrices) throw new Error('No price data found for ' + toCity.city_name + '. Try a larger nearby city.');
