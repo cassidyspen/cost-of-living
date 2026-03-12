@@ -333,12 +333,15 @@ function renderResults(fromCity, toCity, fromPrices, toPrices, fromBudget, toBud
   }).join('');
 
   const detailItems = [
+    { label: '🛏️ 1BR apt (city center)', from: fromPrices.rent1br_center, to: toPrices.rent1br_center },
+    { label: '🛏️ 1BR apt (outside center)', from: fromPrices.rent1br_outside, to: toPrices.rent1br_outside },
+    { label: '🏠 3BR apt (city center)', from: fromPrices.rent3br_center, to: toPrices.rent3br_center },
+    { label: '🏠 3BR apt (outside center)', from: fromPrices.rent3br_outside, to: toPrices.rent3br_outside },
     { label: '🍽️ Cheap meal', from: fromPrices.meal_cheap, to: toPrices.meal_cheap },
-    { label: '🥛 Milk (1L)', from: fromPrices.groceries_milk, to: toPrices.groceries_milk },
     { label: '🍞 Bread (500g)', from: fromPrices.groceries_bread, to: toPrices.groceries_bread },
     { label: '🥚 Eggs (12)', from: fromPrices.groceries_eggs, to: toPrices.groceries_eggs },
-    { label: '🚌 Transit ticket', from: fromPrices.transit_ticket, to: toPrices.transit_ticket },
-    { label: '⛽ Gas (1L)', from: fromPrices.gas_per_liter, to: toPrices.gas_per_liter },
+    { label: '🚌 Transit monthly pass', from: fromPrices.transit_monthly, to: toPrices.transit_monthly },
+    { label: '⚡ Utilities/mo', from: fromPrices.utilities_basic, to: toPrices.utilities_basic },
     { label: '🌐 Internet/mo', from: fromPrices.internet, to: toPrices.internet },
   ].filter(function(i){ return i.from != null && i.to != null; });
 
@@ -576,7 +579,6 @@ window.calculate = async function() {
 
     const fromPrices = parsePrices(results[0]);
     const toPrices = parsePrices(results[1]);
-    console.log('Raw San Diego prices:', JSON.stringify(results[1]).slice(0, 1000));
     const toQoL = results[2];
 
     if (!fromPrices) throw new Error('No price data found for ' + fromCity.city_name + '. Try a larger nearby city.');
