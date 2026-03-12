@@ -464,7 +464,7 @@ function setupAutocomplete(inputId, dropdownId, onSelect) {
       if (!matches.length) { dropdown.classList.remove('open'); return; }
 
       dropdown.innerHTML = matches.map(function(c, i) {
-        const region = c.region_name ? c.region_name + ', ' : ''; return '<div class="autocomplete-item" data-index="' + i + '" data-city="' + c.city_name + '" data-country="' + c.country_name + '" data-region="' + (c.region_name || '') + '"><span>' + c.city_name + '</span><span class="city-country">' + region + c.country_name + '</span></div>';
+        const region = c.state_code ? c.state_code + ', ' : ''; return '<div class="autocomplete-item" data-index="' + i + '" data-city="' + c.city_name + '" data-country="' + c.country_name + '" data-region="' + (c.state_code || '') + '"><span>' + c.city_name + '</span><span class="city-country">' + region + c.country_name + '</span></div>';
       }).join('');
       dropdown.classList.add('open');
       activeIndex = -1;
