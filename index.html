@@ -175,31 +175,33 @@ function parsePrices(data) {
     const item = data.prices.find(function(p) {
       return p.item_name.toLowerCase().includes(name.toLowerCase());
     });
-    return item ? item.avg : null;
+    if (!item) return null;
+    // Use USD value if available, otherwise fall back to avg
+    return item.usd ? parseFloat(item.usd.avg) : item.avg;
   }
   return {
-    currency: (data.prices[0] && data.prices[0].currency_code) || 'USD',
+    currency: 'USD',
     city: data.city_name,
     country: data.country_name,
-    rent1br_center: get('1 bedroom apartment in city centre') || get('1 bedroom'),
-    rent1br_outside: get('1 bedroom apartment outside'),
-    rent3br_center: get('3 bedrooms apartment in city centre') || get('3 bedroom'),
-    rent3br_outside: get('3 bedrooms apartment outside'),
-    meal_cheap: get('inexpensive restaurant') || get('meal, inexpensive'),
-    meal_midrange: get('mid-range restaurant') || get('meal for 2'),
-    groceries_milk: get('milk'),
-    groceries_bread: get('bread'),
-    groceries_eggs: get('eggs'),
-    groceries_chicken: get('chicken'),
+    rent1br_center: get('1 bedroom apartment in city centre'),
+    rent1br_outside: get('1 bedroom apartment outside of centre'),
+    rent3br_center: get('3 bedrooms apartment in city centre'),
+    rent3br_outside: get('3 bedrooms apartment outside of centre'),
+    meal_cheap: get('inexpensive restaurant'),
+    meal_midrange: get('mid-range restaurant, three-course'),
+    groceries_milk: get('milk (regular)'),
+    groceries_bread: get('loaf of fresh white bread'),
+    groceries_eggs: get('eggs (regular)'),
+    groceries_chicken: get('chicken fillets'),
     groceries_apples: get('apples'),
-    transit_ticket: get('one-way ticket') || get('local transport'),
-    transit_monthly: get('monthly pass'),
-    taxi_start: get('taxi start'),
-    gas_per_liter: get('gasoline') || get('gas'),
-    utilities_basic: get('basic (electricity') || get('utilities'),
-    internet: get('internet'),
-    mobile: get('mobile') || get('prepaid'),
-    avg_net_salary: get('average monthly net salary') || get('net salary'),
+    transit_ticket: get('one-way ticket (local transport)'),
+    transit_monthly: get('monthly pass (regular price)'),
+    taxi_start: get('taxi start (normal tariff)'),
+    gas_per_liter: get('gasoline (1 liter)'),
+    utilities_basic: get('basic (electricity, heating, cooling, water, garbage)'),
+    internet: get('internet (60 mbps'),
+    mobile: get('mobile phone monthly plan'),
+    avg_net_salary: get('average monthly net salary'),
     raw: data.prices,
   };
 }
@@ -586,7 +588,7 @@ window.calculate = async function() {
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 fetchAllCities().then(function(cities) {
   allCities = cities;
-  console.log('Cities sample:', cities[0]);
+  console.log('Cities sample:', JSON.stringify(cities[0]));
 }).catch(function(e) {
   console.error('Failed to load cities:', e);
 });
