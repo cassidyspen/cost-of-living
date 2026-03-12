@@ -188,7 +188,7 @@ async function fetchTeleportQoL(cityName) {
   });
 }
 
-ffunction parsePrices(data) {
+function parsePrices(data) {
   if (!data || !data.prices) return null;
   function get(fragment) {
     const item = data.prices.find(function(p) {
