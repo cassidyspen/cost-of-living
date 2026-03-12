@@ -42,7 +42,7 @@ body::before {
   opacity: 0.5;
 }
 
-.wrap { max-width: 1500px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+.wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
 
 nav {
   padding: 20px 0;
