@@ -176,10 +176,10 @@ async function fetchTaxData() {
 async function fetchExchangeRates() {
   return cached('exchange_rates', async () => {
     try {
-      const res = await fetch('https://open.er-api.com/v6/latest/USD');
+      const res = await fetch('/api/rates');
       if (!res.ok) return FALLBACK_RATES;
       const data = await res.json();
-      return data.rates || FALLBACK_RATES;
+      return data || FALLBACK_RATES;
     } catch(e) { return FALLBACK_RATES; }
   });
 }
