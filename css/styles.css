@@ -128,7 +128,7 @@ nav {
 }
 
 .form-section-title {
-  font-family: 'Syne', sans-serif;
+  font-family: 'DM Sans', sans-serif;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 2px;
@@ -283,7 +283,7 @@ nav {
   border: none;
   border-radius: var(--radius);
   padding: 15px 24px;
-  font-family: 'Syne', sans-serif;
+  font-family: 'DM Sans', sans-serif;
   font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.3px;
@@ -320,7 +320,7 @@ nav {
   gap: 12px;
 }
 .results-title {
-  font-family: 'Syne', sans-serif;
+  font-family: 'DM Sans', sans-serif;
   font-size: 22px;
   font-weight: 700;
   letter-spacing: -0.5px;
@@ -358,7 +358,7 @@ nav {
 }
 .cost-city { text-align: center; }
 .cost-city-name {
-  font-family: 'Syne', sans-serif;
+  font-family: 'DM Sans', sans-serif;
   font-size: 15px;
   font-weight: 700;
   color: var(--text);
@@ -366,7 +366,7 @@ nav {
 }
 .cost-city-country { font-size: 11px; color: var(--text3); margin-bottom: 8px; }
 .cost-amount {
-  font-family: 'Syne', sans-serif;
+  font-family: 'DM Sans', sans-serif;
   font-size: 40px;
   font-weight: 800;
   letter-spacing: -2px;
@@ -378,7 +378,7 @@ nav {
 .cost-arrow-col { text-align: center; }
 .cost-arrow { font-size: 24px; color: var(--text3); }
 .diff-label {
-  font-family: 'Syne', sans-serif;
+  font-family: 'DM Sans', sans-serif;
   font-size: 13px;
   font-weight: 700;
   margin-top: 6px;
@@ -451,7 +451,7 @@ nav {
 }
 .insight-body { flex: 1; }
 .insight-title {
-  font-family: 'Syne', sans-serif;
+  font-family: 'DM Sans', sans-serif;
   font-size: 14px;
   font-weight: 700;
   margin-bottom: 4px;
@@ -566,7 +566,7 @@ nav {
   text-align: center;
 }
 .error-icon { font-size: 32px; margin-bottom: 12px; }
-.error-title { font-family: 'Syne', sans-serif; font-weight: 700; margin-bottom: 8px; }
+.error-title { font-family: 'DM Sans', sans-serif; font-weight: 700; margin-bottom: 8px; }
 .error-text { color: var(--text2); font-size: 14px; }
 
 footer {
