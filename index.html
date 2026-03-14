@@ -159,7 +159,7 @@ async function fetchAllCities() {
 async function fetchTaxData() {
   return cached('taxes', async () => {
     try {
-      const res = await fetch('/api/taxes');
+      const res = await fetch('/taxes.json');
       if (!res.ok) return null;
       return res.json();
     } catch(e) { return null; }

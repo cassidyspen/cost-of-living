@@ -1,0 +1,417 @@
+{
+  "year": 2025,
+  "disclaimer": "Based on 2025 U.S. federal and state income tax rates. Single filer. Does not include local/city taxes, deductions beyond standard, or tax credits. Estimates only — consult a tax professional for accurate figures.",
+  "federal": {
+    "standardDeduction": 15000,
+    "brackets": [
+      [0, 11925, 0.10],
+      [11925, 48475, 0.12],
+      [48475, 103350, 0.22],
+      [103350, 197300, 0.24],
+      [197300, 250525, 0.32],
+      [250525, 626350, 0.35],
+      [626350, null, 0.37]
+    ]
+  },
+  "fica": {
+    "socialSecurity": { "rate": 0.062, "wageBase": 176100 },
+    "medicare": { "rate": 0.0145 },
+    "additionalMedicare": { "rate": 0.009, "threshold": 200000 }
+  },
+  "states": {
+    "AL": { "name": "Alabama", "standardDeduction": 2500, "brackets": [
+      [0, 500, 0.02], [500, 3000, 0.04], [3000, null, 0.05]
+    ]},
+    "AK": { "name": "Alaska", "brackets": [] },
+    "AZ": { "name": "Arizona", "standardDeduction": 15000, "brackets": [
+      [0, null, 0.025]
+    ]},
+    "AR": { "name": "Arkansas", "standardDeduction": 2200, "brackets": [
+      [0, 4999, 0.0], [4999, 9999, 0.04], [9999, null, 0.044]
+    ]},
+    "CA": { "name": "California", "standardDeduction": 5202, "brackets": [
+      [0, 10412, 0.01], [10412, 24684, 0.02], [24684, 38959, 0.04],
+      [38959, 54081, 0.06], [54081, 68350, 0.08], [68350, 349137, 0.093],
+      [349137, 418961, 0.103], [418961, 698271, 0.113], [698271, 1000000, 0.123],
+      [1000000, null, 0.133]
+    ]},
+    "CO": { "name": "Colorado", "standardDeduction": 15000, "brackets": [
+      [0, null, 0.044]
+    ]},
+    "CT": { "name": "Connecticut", "standardDeduction": 0, "brackets": [
+      [0, 10000, 0.03], [10000, 50000, 0.05], [50000, 100000, 0.055],
+      [100000, 200000, 0.06], [200000, 250000, 0.065], [250000, 500000, 0.069],
+      [500000, null, 0.0699]
+    ]},
+    "DE": { "name": "Delaware", "standardDeduction": 3250, "brackets": [
+      [0, 2000, 0.0], [2000, 5000, 0.022], [5000, 10000, 0.039],
+      [10000, 20000, 0.048], [20000, 25000, 0.052], [25000, 60000, 0.0555],
+      [60000, null, 0.066]
+    ]},
+    "DC": { "name": "D.C.", "standardDeduction": 14600, "brackets": [
+      [0, 10000, 0.04], [10000, 40000, 0.06], [40000, 60000, 0.065],
+      [60000, 250000, 0.085], [250000, 500000, 0.0925], [500000, 1000000, 0.0975],
+      [1000000, null, 0.1075]
+    ]},
+    "FL": { "name": "Florida", "brackets": [] },
+    "GA": { "name": "Georgia", "standardDeduction": 5400, "brackets": [
+      [0, null, 0.0549]
+    ]},
+    "HI": { "name": "Hawaii", "standardDeduction": 2200, "brackets": [
+      [0, 2400, 0.014], [2400, 4800, 0.032], [4800, 9600, 0.055],
+      [9600, 14400, 0.064], [14400, 19200, 0.068], [19200, 24000, 0.072],
+      [24000, 36000, 0.076], [36000, 48000, 0.079], [48000, 150000, 0.0825],
+      [150000, 175000, 0.09], [175000, 200000, 0.10], [200000, null, 0.11]
+    ]},
+    "ID": { "name": "Idaho", "standardDeduction": 15000, "brackets": [
+      [0, null, 0.05695]
+    ]},
+    "IL": { "name": "Illinois", "standardDeduction": 2425, "brackets": [
+      [0, null, 0.0495]
+    ]},
+    "IN": { "name": "Indiana", "standardDeduction": 1000, "brackets": [
+      [0, null, 0.0305]
+    ]},
+    "IA": { "name": "Iowa", "standardDeduction": 14600, "brackets": [
+      [0, null, 0.038]
+    ]},
+    "KS": { "name": "Kansas", "standardDeduction": 3500, "brackets": [
+      [0, 15000, 0.031], [15000, 30000, 0.0525], [30000, null, 0.057]
+    ]},
+    "KY": { "name": "Kentucky", "standardDeduction": 3160, "brackets": [
+      [0, null, 0.04]
+    ]},
+    "LA": { "name": "Louisiana", "standardDeduction": 4500, "brackets": [
+      [0, null, 0.03]
+    ]},
+    "ME": { "name": "Maine", "standardDeduction": 14600, "brackets": [
+      [0, 24500, 0.058], [24500, 58050, 0.0675], [58050, null, 0.0715]
+    ]},
+    "MD": { "name": "Maryland", "standardDeduction": 2400, "brackets": [
+      [0, 1000, 0.02], [1000, 2000, 0.03], [2000, 3000, 0.04],
+      [3000, 100000, 0.0475], [100000, 125000, 0.05], [125000, 150000, 0.0525],
+      [150000, 250000, 0.055], [250000, null, 0.0575]
+    ]},
+    "MA": { "name": "Massachusetts", "standardDeduction": 4400, "brackets": [
+      [0, 1000000, 0.05], [1000000, null, 0.09]
+    ]},
+    "MI": { "name": "Michigan", "standardDeduction": 5400, "brackets": [
+      [0, null, 0.0425]
+    ]},
+    "MN": { "name": "Minnesota", "standardDeduction": 14575, "brackets": [
+      [0, 31690, 0.0535], [31690, 104090, 0.068], [104090, 193240, 0.0785],
+      [193240, null, 0.0985]
+    ]},
+    "MS": { "name": "Mississippi", "standardDeduction": 2300, "brackets": [
+      [0, null, 0.047]
+    ]},
+    "MO": { "name": "Missouri", "standardDeduction": 14600, "brackets": [
+      [0, 1207, 0.0], [1207, 2414, 0.02], [2414, 3621, 0.025],
+      [3621, 4828, 0.03], [4828, 6035, 0.035], [6035, 7242, 0.04],
+      [7242, 8584, 0.045], [8584, null, 0.047]
+    ]},
+    "MT": { "name": "Montana", "standardDeduction": 5540, "brackets": [
+      [0, 20500, 0.047], [20500, null, 0.059]
+    ]},
+    "NE": { "name": "Nebraska", "standardDeduction": 7900, "brackets": [
+      [0, 3700, 0.0246], [3700, 22170, 0.0351], [22170, 35730, 0.0501],
+      [35730, null, 0.052]
+    ]},
+    "NV": { "name": "Nevada", "brackets": [] },
+    "NH": { "name": "New Hampshire", "brackets": [] },
+    "NJ": { "name": "New Jersey", "standardDeduction": 1000, "brackets": [
+      [0, 20000, 0.014], [20000, 35000, 0.0175], [35000, 40000, 0.035],
+      [40000, 75000, 0.05525], [75000, 500000, 0.0637], [500000, 1000000, 0.0897],
+      [1000000, null, 0.1075]
+    ]},
+    "NM": { "name": "New Mexico", "standardDeduction": 14600, "brackets": [
+      [0, 5500, 0.017], [5500, 11000, 0.032], [11000, 16000, 0.047],
+      [16000, 210000, 0.049], [210000, null, 0.059]
+    ]},
+    "NY": { "name": "New York", "standardDeduction": 8000, "brackets": [
+      [0, 17150, 0.04], [17150, 23600, 0.045], [23600, 27900, 0.0525],
+      [27900, 161550, 0.0585], [161550, 323200, 0.0625], [323200, 2155350, 0.0685],
+      [2155350, 5000000, 0.0965], [5000000, 25000000, 0.103], [25000000, null, 0.109]
+    ]},
+    "NC": { "name": "North Carolina", "standardDeduction": 10750, "brackets": [
+      [0, null, 0.045]
+    ]},
+    "ND": { "name": "North Dakota", "standardDeduction": 15000, "brackets": [
+      [0, 44725, 0.011], [44725, 225975, 0.0204], [225975, null, 0.0227]
+    ]},
+    "OH": { "name": "Ohio", "standardDeduction": 2400, "brackets": [
+      [0, 26050, 0.0], [26050, 100000, 0.0275], [100000, null, 0.035]
+    ]},
+    "OK": { "name": "Oklahoma", "standardDeduction": 6350, "brackets": [
+      [0, 1000, 0.0025], [1000, 2500, 0.0075], [2500, 3750, 0.0175],
+      [3750, 4900, 0.0275], [4900, 7200, 0.0375], [7200, null, 0.0475]
+    ]},
+    "OR": { "name": "Oregon", "standardDeduction": 2420, "brackets": [
+      [0, 10200, 0.0475], [10200, 25500, 0.0675], [25500, 125000, 0.0875],
+      [125000, null, 0.099]
+    ]},
+    "PA": { "name": "Pennsylvania", "standardDeduction": 0, "brackets": [
+      [0, null, 0.0307]
+    ]},
+    "RI": { "name": "Rhode Island", "standardDeduction": 10550, "brackets": [
+      [0, 77450, 0.0375], [77450, 176050, 0.0475], [176050, null, 0.0599]
+    ]},
+    "SC": { "name": "South Carolina", "standardDeduction": 13850, "brackets": [
+      [0, 3460, 0.0], [3460, null, 0.064]
+    ]},
+    "SD": { "name": "South Dakota", "brackets": [] },
+    "TN": { "name": "Tennessee", "brackets": [] },
+    "TX": { "name": "Texas", "brackets": [] },
+    "UT": { "name": "Utah", "standardDeduction": 14600, "brackets": [
+      [0, null, 0.0455]
+    ]},
+    "VT": { "name": "Vermont", "standardDeduction": 7000, "brackets": [
+      [0, 45400, 0.0335], [45400, 110050, 0.066], [110050, 229550, 0.076],
+      [229550, null, 0.0875]
+    ]},
+    "VA": { "name": "Virginia", "standardDeduction": 8000, "brackets": [
+      [0, 3000, 0.02], [3000, 5000, 0.03], [5000, 17000, 0.05],
+      [17000, null, 0.0575]
+    ]},
+    "WA": { "name": "Washington", "brackets": [] },
+    "WV": { "name": "West Virginia", "standardDeduction": 2000, "brackets": [
+      [0, 10000, 0.0236], [10000, 25000, 0.0315], [25000, 40000, 0.0354],
+      [40000, 60000, 0.0472], [60000, null, 0.0512]
+    ]},
+    "WI": { "name": "Wisconsin", "standardDeduction": 11200, "brackets": [
+      [0, 13810, 0.035], [13810, 27630, 0.044], [27630, 304170, 0.053],
+      [304170, null, 0.0765]
+    ]},
+    "WY": { "name": "Wyoming", "brackets": [] }
+  },
+  "countries": {
+    "United Kingdom": {
+      "currency": "GBP",
+      "brackets": [
+        [0, 12570, 0.0], [12570, 50270, 0.20], [50270, 125140, 0.40], [125140, null, 0.45]
+      ],
+      "social": { "label": "National Insurance", "brackets": [
+        [0, 12570, 0.0], [12570, 50270, 0.08], [50270, null, 0.02]
+      ]}
+    },
+    "Canada": {
+      "currency": "CAD",
+      "brackets": [
+        [0, 15705, 0.0], [15705, 55867, 0.15], [55867, 111733, 0.205],
+        [111733, 154906, 0.26], [154906, 220000, 0.29], [220000, null, 0.33]
+      ],
+      "social": { "label": "CPP + EI", "brackets": [
+        [0, 3500, 0.0166], [3500, 63200, 0.0761], [63200, 73200, 0.0595], [73200, null, 0.0]
+      ]}
+    },
+    "Australia": {
+      "currency": "AUD",
+      "brackets": [
+        [0, 18200, 0.0], [18200, 45000, 0.19], [45000, 120000, 0.325],
+        [120000, 180000, 0.37], [180000, null, 0.45]
+      ],
+      "social": { "label": "Medicare levy", "brackets": [
+        [0, null, 0.02]
+      ]}
+    },
+    "Germany": {
+      "currency": "EUR",
+      "brackets": [
+        [0, 11784, 0.0], [11784, 30000, 0.24], [30000, 66760, 0.36],
+        [66760, 277825, 0.42], [277825, null, 0.45]
+      ],
+      "social": { "label": "Social insurance", "brackets": [
+        [0, 91600, 0.196], [91600, null, 0.0]
+      ]}
+    },
+    "France": {
+      "currency": "EUR",
+      "brackets": [
+        [0, 11294, 0.0], [11294, 28797, 0.11], [28797, 82341, 0.30],
+        [82341, 177106, 0.41], [177106, null, 0.45]
+      ],
+      "social": { "label": "Cotisations sociales", "brackets": [
+        [0, null, 0.20]
+      ]}
+    },
+    "Netherlands": {
+      "currency": "EUR",
+      "brackets": [
+        [0, 75518, 0.3697], [75518, null, 0.495]
+      ],
+      "social": { "label": "Incl. in income tax", "brackets": [] }
+    },
+    "Portugal": {
+      "currency": "EUR",
+      "brackets": [
+        [0, 7703, 0.1325], [7703, 11623, 0.18], [11623, 16472, 0.23],
+        [16472, 21321, 0.26], [21321, 27146, 0.3275], [27146, 39791, 0.37],
+        [39791, 51997, 0.435], [51997, 81199, 0.45], [81199, null, 0.48]
+      ],
+      "social": { "label": "Social Security", "brackets": [
+        [0, null, 0.11]
+      ]}
+    },
+    "Spain": {
+      "currency": "EUR",
+      "brackets": [
+        [0, 12450, 0.19], [12450, 20200, 0.24], [20200, 35200, 0.30],
+        [35200, 60000, 0.37], [60000, 300000, 0.45], [300000, null, 0.47]
+      ],
+      "social": { "label": "Social Security", "brackets": [
+        [0, 72480, 0.0635], [72480, null, 0.0]
+      ]}
+    },
+    "Japan": {
+      "currency": "JPY",
+      "brackets": [
+        [0, 480000, 0.0], [480000, 1950000, 0.05], [1950000, 3300000, 0.10],
+        [3300000, 6950000, 0.20], [6950000, 9000000, 0.23],
+        [9000000, 18000000, 0.33], [18000000, 40000000, 0.40], [40000000, null, 0.45]
+      ],
+      "social": { "label": "Social insurance", "brackets": [
+        [0, null, 0.14]
+      ]}
+    },
+    "Singapore": {
+      "currency": "SGD",
+      "brackets": [
+        [0, 20000, 0.0], [20000, 30000, 0.02], [30000, 40000, 0.035],
+        [40000, 80000, 0.07], [80000, 120000, 0.115], [120000, 160000, 0.15],
+        [160000, 200000, 0.18], [200000, 240000, 0.19], [240000, 280000, 0.195],
+        [280000, 320000, 0.20], [320000, null, 0.22]
+      ],
+      "social": { "label": "CPF", "brackets": [
+        [0, 102000, 0.20], [102000, null, 0.0]
+      ]}
+    },
+    "Mexico": {
+      "currency": "MXN",
+      "brackets": [
+        [0, 8952, 0.0192], [8952, 75984, 0.064], [75984, 133536, 0.1088],
+        [133536, 155229, 0.16], [155229, 185852, 0.1792], [185852, 374837, 0.2136],
+        [374837, 590795, 0.2352], [590795, 1127926, 0.30], [1127926, 1503902, 0.32],
+        [1503902, 4511707, 0.34], [4511707, null, 0.35]
+      ],
+      "social": { "label": "IMSS", "brackets": [
+        [0, null, 0.025]
+      ]}
+    },
+    "Brazil": {
+      "currency": "BRL",
+      "brackets": [
+        [0, 27110, 0.0], [27110, 33468, 0.075], [33468, 44476, 0.15],
+        [44476, 55976, 0.225], [55976, null, 0.275]
+      ],
+      "social": { "label": "INSS", "brackets": [
+        [0, 21945, 0.075], [21945, 43271, 0.09], [43271, 64880, 0.12],
+        [64880, 87226, 0.14], [87226, null, 0.0]
+      ]}
+    },
+    "New Zealand": {
+      "currency": "NZD",
+      "brackets": [
+        [0, 14000, 0.105], [14000, 48000, 0.175], [48000, 70000, 0.30],
+        [70000, 180000, 0.33], [180000, null, 0.39]
+      ],
+      "social": { "label": "ACC levy", "brackets": [
+        [0, 139584, 0.016], [139584, null, 0.0]
+      ]}
+    },
+    "Ireland": {
+      "currency": "EUR",
+      "brackets": [
+        [0, 40000, 0.20], [40000, null, 0.40]
+      ],
+      "social": { "label": "USC + PRSI", "brackets": [
+        [0, 12012, 0.045], [12012, 25760, 0.06], [25760, 70044, 0.08], [70044, null, 0.12]
+      ]}
+    },
+    "Switzerland": {
+      "currency": "CHF",
+      "brackets": [
+        [0, 14500, 0.0], [14500, 31600, 0.063], [31600, 60800, 0.116],
+        [60800, 130900, 0.155], [130900, null, 0.203]
+      ],
+      "social": { "label": "AHV/ALV", "brackets": [
+        [0, null, 0.064]
+      ]}
+    },
+    "Sweden": {
+      "currency": "SEK",
+      "brackets": [
+        [0, 598500, 0.32], [598500, null, 0.52]
+      ],
+      "social": { "label": "Pension contribution", "brackets": [
+        [0, null, 0.07]
+      ]}
+    },
+    "Norway": {
+      "currency": "NOK",
+      "brackets": [
+        [0, 208050, 0.22], [208050, 292850, 0.239], [292850, 670000, 0.26],
+        [670000, 937900, 0.358], [937900, 1350000, 0.388], [1350000, null, 0.398]
+      ],
+      "social": { "label": "Social insurance", "brackets": [
+        [0, null, 0.078]
+      ]}
+    },
+    "United Arab Emirates": {
+      "currency": "AED",
+      "brackets": [],
+      "social": { "label": "None", "brackets": [] }
+    },
+    "Thailand": {
+      "currency": "THB",
+      "brackets": [
+        [0, 210000, 0.0], [210000, 360000, 0.05], [360000, 560000, 0.10],
+        [560000, 810000, 0.15], [810000, 1060000, 0.20], [1060000, 2060000, 0.25],
+        [2060000, 5060000, 0.30], [5060000, null, 0.35]
+      ],
+      "social": { "label": "Social Security", "brackets": [
+        [0, 180000, 0.05], [180000, null, 0.0]
+      ]}
+    },
+    "Italy": {
+      "currency": "EUR",
+      "brackets": [
+        [0, 28000, 0.23], [28000, 50000, 0.35], [50000, null, 0.43]
+      ],
+      "social": { "label": "Contributi sociali", "brackets": [
+        [0, null, 0.0919]
+      ]}
+    },
+    "India": {
+      "currency": "INR",
+      "brackets": [
+        [0, 300000, 0.0], [300000, 700000, 0.05], [700000, 1000000, 0.10],
+        [1000000, 1200000, 0.15], [1200000, 1500000, 0.20], [1500000, null, 0.30]
+      ],
+      "social": { "label": "PF + ESI", "brackets": [
+        [0, null, 0.12]
+      ]}
+    },
+    "China": {
+      "currency": "CNY",
+      "brackets": [
+        [0, 60000, 0.03], [60000, 144000, 0.10], [144000, 300000, 0.20],
+        [300000, 420000, 0.25], [420000, 660000, 0.30], [660000, 960000, 0.35],
+        [960000, null, 0.45]
+      ],
+      "social": { "label": "Social insurance", "brackets": [
+        [0, null, 0.105]
+      ]}
+    },
+    "South Korea": {
+      "currency": "KRW",
+      "brackets": [
+        [0, 14000000, 0.06], [14000000, 50000000, 0.15], [50000000, 88000000, 0.24],
+        [88000000, 150000000, 0.35], [150000000, 300000000, 0.38],
+        [300000000, 500000000, 0.40], [500000000, null, 0.42]
+      ],
+      "social": { "label": "National Health + Pension", "brackets": [
+        [0, null, 0.0895]
+      ]}
+    }
+  }
+}
