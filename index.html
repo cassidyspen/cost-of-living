@@ -588,6 +588,9 @@ function renderResults(fromCity, toCity, fromPrices, toPrices, fromBudget, toBud
   const isMoreExpensive = diff > 0;
   const isSimilar = Math.abs(pct) < 8;
 
+  // Adults who actually earn income — used for per-earner destination salary calc
+  const workingAdults = Math.max(1, (incomes || []).filter(function(inc) { return inc > 0; }).length);
+
   // ── Tax helpers ──────────────────────────────────────────────────────────────
   const isFromUS = !!fromState;
   const isToUS = !!toState;
@@ -639,22 +642,22 @@ function renderResults(fromCity, toCity, fromPrices, toPrices, fromBudget, toBud
   let toCurrencyCode = 'USD';
 
   if (isToUS && taxData) {
-    const grossPerAdultUS = calcGrossForTakeHome(Math.round(scaledTakeHomeUSD / adults), toState);
+    const grossPerAdultUS = calcGrossForTakeHome(Math.round(scaledTakeHomeUSD / workingAdults), toState);
     if (grossPerAdultUS) {
-      toGrossLocal = grossPerAdultUS * adults;
+      toGrossLocal = grossPerAdultUS * workingAdults;
       toGrossUSD = toGrossLocal;
       const tpa = calcTax(grossPerAdultUS, toState);
-      toTax = { federal: tpa.federal * adults, state: tpa.state * adults, fica: tpa.fica * adults, total: tpa.total * adults, takeHome: tpa.takeHome * adults, stateName: tpa.stateName, noStateIncomeTax: tpa.noStateIncomeTax };
+      toTax = { federal: tpa.federal * workingAdults, state: tpa.state * workingAdults, fica: tpa.fica * workingAdults, total: tpa.total * workingAdults, takeHome: tpa.takeHome * workingAdults, stateName: tpa.stateName, noStateIncomeTax: tpa.noStateIncomeTax };
     }
   } else if (toCountryData && exchangeRates) {
     toCurrencyCode = toCountryData.currency;
-    const targetLocalPerAdult = toLocal(scaledTakeHomeUSD / adults, toCurrencyCode);
+    const targetLocalPerAdult = toLocal(scaledTakeHomeUSD / workingAdults, toCurrencyCode);
     const grossLocalPerAdult = calcGrossForTakeHomeIntl(targetLocalPerAdult, toCountryData);
     if (grossLocalPerAdult) {
-      toGrossLocal = grossLocalPerAdult * adults;
+      toGrossLocal = grossLocalPerAdult * workingAdults;
       toGrossUSD = Math.round(toUSD(toGrossLocal, toCurrencyCode));
       const tpa = calcCountryTax(grossLocalPerAdult, toCountryData);
-      toTax = { incomeTax: tpa.incomeTax * adults, social: tpa.social * adults, total: tpa.total * adults, takeHome: tpa.takeHome * adults, socialLabel: tpa.socialLabel, noIncomeTax: tpa.noIncomeTax, noSocial: tpa.noSocial };
+      toTax = { incomeTax: tpa.incomeTax * workingAdults, social: tpa.social * workingAdults, total: tpa.total * workingAdults, takeHome: tpa.takeHome * workingAdults, socialLabel: tpa.socialLabel, noIncomeTax: tpa.noIncomeTax, noSocial: tpa.noSocial };
     }
   }
 
