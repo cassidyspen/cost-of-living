@@ -59,7 +59,7 @@
       <div class="field">
         <label>Children</label>
         <div class="select-wrap">
-          <select id="children">
+          <select id="children" onchange="updateChildcareOptions()">
             <option value="0">No children</option>
             <option value="1">1 child</option>
             <option value="2">2 children</option>
@@ -68,6 +68,12 @@
             <option value="5">5 children</option>
             <option value="6">6 children</option>
           </select>
+        </div>
+      </div>
+      <div class="field" id="childcareField" style="display:none">
+        <label>In childcare / daycare</label>
+        <div class="select-wrap">
+          <select id="childcareKids"></select>
         </div>
       </div>
       <div class="field">
@@ -150,7 +156,7 @@ const lifestyleState = { car: true, transit: false, dining: false, cooking: true
 const _cache = {};
 
 // ─── URL STATE ────────────────────────────────────────────────────────────────
-function buildShareUrl(fc, tc, adults, children, incomes, housingType, lifestyle) {
+function buildShareUrl(fc, tc, adults, children, childcareKids, incomes, housingType, lifestyle) {
   const p = new URLSearchParams();
   p.set('fc', fc.city_name);
   p.set('fcn', fc.country_name);
@@ -160,6 +166,7 @@ function buildShareUrl(fc, tc, adults, children, incomes, housingType, lifestyle
   if (tc.state_code) p.set('tcs', tc.state_code);
   p.set('a', adults);
   p.set('k', children);
+  p.set('ck', childcareKids);
   for (let i = 0; i < adults; i++) p.set('i' + (i + 1), incomes[i] || 0);
   p.set('h', housingType);
   p.set('car', lifestyle.car ? '1' : '0');
@@ -176,7 +183,7 @@ function readUrlParams() {
   return {
     fromCity: { city_name: p.get('fc'), country_name: p.get('fcn'), state_code: p.get('fcs') || '' },
     toCity:   { city_name: p.get('tc'), country_name: p.get('tcn'), state_code: p.get('tcs') || '' },
-    adults, children: parseInt(p.get('k')) || 0, incomes,
+    adults, children: parseInt(p.get('k')) || 0, childcareKids: parseInt(p.get('ck')) || 0, incomes,
     housingType: p.get('h') || 'renter',
     car: p.get('car') !== '0',
     dining: p.get('dining') === '1',
@@ -197,6 +204,8 @@ function applyUrlParams(params) {
   document.getElementById('adults').value   = params.adults;
   document.getElementById('children').value = params.children;
   updateAdultIncomes();
+  updateChildcareOptions();
+  document.getElementById('childcareKids').value = params.childcareKids;
   for (let i = 1; i <= params.adults; i++) {
     const el = document.getElementById('income' + i);
     if (el) el.value = params.incomes[i - 1] || 0;
@@ -406,8 +415,8 @@ function buildMonthlyBudget(prices, profile, country) {
 
   const healthcare = (country === 'United States') ? Math.round(280 * hhMult) : 0;
 
-  const childcare = profile.children > 0
-    ? Math.round((prices.preschool || (costLevel * 800)) * profile.children)
+  const childcare = profile.childcareKids > 0
+    ? Math.round((prices.preschool || (costLevel * 800)) * profile.childcareKids)
     : 0;
 
   const total = housing + food + transport + utilities + misc + healthcare + childcare;
@@ -926,6 +935,19 @@ window.updateAdultIncomes = function() {
   updateTotalIncomeDisplay();
 };
 
+window.updateChildcareOptions = function() {
+  const n = parseInt(document.getElementById('children').value) || 0;
+  const sel = document.getElementById('childcareKids');
+  const prev = parseInt(sel.value) || 0;
+  sel.innerHTML = '<option value="0">None</option>';
+  for (let i = 1; i <= n; i++) {
+    const label = i === 1 ? '1 child' : i + ' children';
+    sel.innerHTML += '<option value="' + i + '">' + label + '</option>';
+  }
+  sel.value = Math.min(prev || n, n);
+  document.getElementById('childcareField').style.display = n > 0 ? '' : 'none';
+};
+
 window.updateTotalIncomeDisplay = function() {
   const n = parseInt(document.getElementById('adults').value) || 1;
   if (n < 2) { document.getElementById('totalIncomeDisplay').style.display = 'none'; return; }
@@ -987,8 +1009,9 @@ window.calculate = async function() {
   }, 700);
 
   try {
+    const childcareKids = parseInt(document.getElementById('childcareKids').value) || 0;
     const lifestyle = { owner: housingType === 'owner', car: lifestyleState.car, dining: lifestyleState.dining };
-    const profile = { incomes, totalIncome, adults, children, lifestyle };
+    const profile = { incomes, totalIncome, adults, children, childcareKids, lifestyle };
 
     const isIntl = fromCity.country_name !== 'United States' || toCity.country_name !== 'United States';
     const results = await Promise.all([
@@ -1020,7 +1043,7 @@ window.calculate = async function() {
     const toState = toCity.state_code || null;
 
     // Update URL so results are shareable
-    history.replaceState(null, '', buildShareUrl(fromCity, toCity, adults, children, incomes, housingType, lifestyleState));
+    history.replaceState(null, '', buildShareUrl(fromCity, toCity, adults, children, childcareKids, incomes, housingType, lifestyleState));
 
     renderResults(fromCity, toCity, fromPrices, toPrices, fromBudget, toBudget, totalIncome, toQoL, fromState, toState, adults, incomes);
 
