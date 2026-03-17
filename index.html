@@ -84,6 +84,15 @@
         </div>
       </div>
       <div class="field">
+        <label>Health insurance</label>
+        <div class="select-wrap">
+          <select id="insuranceType">
+            <option value="employer">Employer-provided</option>
+            <option value="marketplace">Self-insured / Marketplace</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
         <label>Adult 1 gross income ($) <span style="font-weight:400;font-size:0.8em;opacity:0.7">(before tax)</span></label>
         <input type="number" id="income1" placeholder="85,000" value="85000" min="0" oninput="updateTotalIncomeDisplay()">
       </div>
@@ -146,7 +155,7 @@
       <p style="font-size:0.875rem;color:var(--text2);margin:0 0 18px;line-height:1.6">Uses the "Preschool, Full Day, Private, Monthly" price from TravelTables, multiplied by the number of children you mark as needing childcare. Children past childcare age still affect housing size and food/misc scaling.</p>
 
       <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 6px">Healthcare</h3>
-      <p style="font-size:0.875rem;color:var(--text2);margin:0 0 18px;line-height:1.6">US residents pay ~$280/month out-of-pocket (premiums + copays) that isn't captured in other budget lines. International residents' healthcare is typically covered through social contributions already included in the tax calculation, so $0 is added for them — making comparisons apples-to-apples.</p>
+      <p style="font-size:0.875rem;color:var(--text2);margin:0 0 18px;line-height:1.6">For employer-provided coverage, employee premium contributions use KFF 2024 survey averages: ~$150/mo (individual), ~$450/mo (individual + children), ~$550/mo (individual + spouse), ~$750/mo (family). For self-insured / Marketplace coverage, estimates use 2025 Silver plan benchmark premiums by state, scaled by coverage tier (individual, individual + children 1.5×, individual + spouse 1.8×, family 2.5×). International residents' healthcare is typically covered through social contributions already included in the tax calculation, so $0 is added for them. Actual costs vary by age, plan, and employer.</p>
 
       <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 6px">Limitations</h3>
       <p style="font-size:0.875rem;color:var(--text2);margin:0;line-height:1.6">Prices are crowdsourced averages and may lag real conditions. Tax calculations are simplified estimates. Local taxes (city, county) are excluded. Results are a starting point — not financial advice.</p>
@@ -175,7 +184,7 @@ const lifestyleState = { car: true, transit: false, dining: false, cooking: true
 const _cache = {};
 
 // ─── URL STATE ────────────────────────────────────────────────────────────────
-function buildShareUrl(fc, tc, adults, children, childcareKids, incomes, housingType, lifestyle) {
+function buildShareUrl(fc, tc, adults, children, childcareKids, incomes, housingType, lifestyle, insuranceType) {
   const p = new URLSearchParams();
   p.set('fc', fc.city_name);
   p.set('fcn', fc.country_name);
@@ -188,6 +197,7 @@ function buildShareUrl(fc, tc, adults, children, childcareKids, incomes, housing
   p.set('ck', childcareKids);
   for (let i = 0; i < adults; i++) p.set('i' + (i + 1), incomes[i] || 0);
   p.set('h', housingType);
+  p.set('ins', insuranceType || 'employer');
   p.set('car', lifestyle.car ? '1' : '0');
   p.set('dining', lifestyle.dining ? '1' : '0');
   return window.location.pathname + '?' + p.toString();
@@ -204,6 +214,7 @@ function readUrlParams() {
     toCity:   { city_name: p.get('tc'), country_name: p.get('tcn'), state_code: p.get('tcs') || '' },
     adults, children: parseInt(p.get('k')) || 0, childcareKids: parseInt(p.get('ck')) || 0, incomes,
     housingType: p.get('h') || 'renter',
+    insuranceType: p.get('ins') || 'employer',
     car: p.get('car') !== '0',
     dining: p.get('dining') === '1',
   };
@@ -230,6 +241,7 @@ function applyUrlParams(params) {
     if (el) el.value = params.incomes[i - 1] || 0;
   }
   document.getElementById('housingType').value = params.housingType;
+  document.getElementById('insuranceType').value = params.insuranceType || 'employer';
   lifestyleState.car     = params.car;
   lifestyleState.transit = !params.car;
   lifestyleState.dining  = params.dining;
@@ -367,8 +379,18 @@ function parsePrices(data) {
   };
 }
 
+// ─── HEALTHCARE DATA ──────────────────────────────────────────────────────────
+const ACA_STATE_PREMIUMS = {
+  AL:489, AK:1070, AZ:528, AR:494, CA:480, CO:430, CT:520, DE:578, FL:647, GA:658,
+  HI:420, ID:460, IL:450, IN:510, IA:475, KS:490, KY:505, LA:530, ME:580, MD:440,
+  MA:380, MI:465, MN:420, MS:541, MO:485, MT:560, NE:520, NV:533, NH:368, NJ:430,
+  NM:608, NY:1134, NC:500, ND:490, OH:470, OK:510, OR:480, PA:460, RI:410, SC:520,
+  SD:640, TN:556, TX:586, UT:390, VT:1157, VA:480, WA:528, WV:540, WI:470, WY:720,
+  DC:480
+};
+
 // ─── CALCULATOR ───────────────────────────────────────────────────────────────
-function buildMonthlyBudget(prices, profile, country) {
+function buildMonthlyBudget(prices, profile, country, stateCode) {
   const hhMult = 1.0 + (profile.adults - 1) * 0.55 + profile.children * 0.375;
   const lifestyle = profile.lifestyle;
   const needsBigPlace = profile.adults > 1 || profile.children > 0;
@@ -432,7 +454,20 @@ function buildMonthlyBudget(prices, profile, country) {
   const costLevel = signals.length ? signals.reduce(function(a,b){return a+b;},0) / signals.length : 1;
   const misc = Math.round(300 * costLevel * (hhMult > 1 ? 1.3 : 1));
 
-  const healthcare = (country === 'United States') ? Math.round(280 * hhMult) : 0;
+  let healthcare = 0;
+  if (country === 'United States') {
+    const tier = (profile.adults === 1 && profile.children === 0) ? 'individual'
+      : (profile.adults === 1 && profile.children > 0) ? 'ind_children'
+      : (profile.adults === 2 && profile.children === 0) ? 'ind_spouse'
+      : 'family';
+    if (profile.insuranceType === 'marketplace') {
+      const basePremium = ACA_STATE_PREMIUMS[stateCode] || 500;
+      const tierMult = { individual: 1.0, ind_children: 1.5, ind_spouse: 1.8, family: 2.5 }[tier];
+      healthcare = Math.round(basePremium * tierMult);
+    } else {
+      healthcare = { individual: 150, ind_children: 450, ind_spouse: 550, family: 750 }[tier];
+    }
+  }
 
   const childcare = profile.childcareKids > 0
     ? Math.round((prices.preschool || (costLevel * 800)) * profile.childcareKids)
@@ -764,6 +799,19 @@ function renderResults(fromCity, toCity, fromPrices, toPrices, fromBudget, toBud
     return '<div class="breakdown-row"><span class="item">' + item.label + '</span><div class="values"><span class="from-val">' + fmt(item.from) + '</span><span class="to-val ' + cls + '">' + fmt(item.to) + '</span></div></div>';
   }).join('') || '<p style="color:var(--text3);font-size:13px">Price details unavailable.</p>';
 
+  let healthcareRow = '';
+  if (fromBudget.healthcare > 0 || toBudget.healthcare > 0) {
+    const fromHCVal = fromBudget.healthcare > 0 ? fmt(fromBudget.healthcare) : '—';
+    const toHC = toBudget.healthcare;
+    const toHCVal = toHC > 0 ? fmt(toHC) : '—';
+    const toHCCls = (fromBudget.healthcare > 0 && toHC > 0) ? (toHC > fromBudget.healthcare * 1.05 ? 'up' : toHC < fromBudget.healthcare * 0.95 ? 'down' : '') : '';
+    healthcareRow = '<div class="breakdown-row"><span class="item" style="display:flex;flex-direction:column;gap:1px">🏥 Healthcare/mo<span style="font-size:10px;color:var(--text3);font-weight:400">est. based on 2025 ACA rates</span></span><div class="values"><span class="from-val">' + fromHCVal + '</span><span class="to-val ' + toHCCls + '">' + toHCVal + '</span></div></div>';
+  }
+
+  const healthcareDisclaimer = (fromBudget.healthcare > 0 || toBudget.healthcare > 0)
+    ? '<div class="tax-disclaimer" style="margin-top:16px">Healthcare estimates based on 2025 ACA benchmark premiums · Employer contributions from KFF 2024 survey · Actual costs vary by age, plan and employer</div>'
+    : '';
+
   let avgSalaryNote = '';
   if (toPrices.avg_net_salary) {
     const annualUSD = toPrices.avg_net_salary * 12;
@@ -841,6 +889,7 @@ function renderResults(fromCity, toCity, fromPrices, toPrices, fromBudget, toBud
       <div class="breakdown-card">
         <div class="breakdown-label"><span class="icon">🔍</span> Real price samples</div>
         ${detailRows}
+        ${healthcareRow}
       </div>
     </div>
     <div class="salary-insight">
@@ -852,6 +901,7 @@ function renderResults(fromCity, toCity, fromPrices, toPrices, fromBudget, toBud
         <a class="insight-link" href="https://www.glassdoor.com/Salaries/index.htm" target="_blank" rel="noopener">See salaries by job title on Glassdoor ↗</a>
       </div>
     </div>
+    ${healthcareDisclaimer}
     ${qolHtml}
     <div class="share-row">
       <button class="share-btn" onclick="copyShareLink()">🔗 Copy share link</button>
@@ -1030,8 +1080,9 @@ window.calculate = async function() {
 
   try {
     const childcareKids = parseInt(document.getElementById('childcareKids').value) || 0;
+    const insuranceType = document.getElementById('insuranceType').value;
     const lifestyle = { owner: housingType === 'owner', car: lifestyleState.car, dining: lifestyleState.dining };
-    const profile = { incomes, totalIncome, adults, children, childcareKids, lifestyle };
+    const profile = { incomes, totalIncome, adults, children, childcareKids, lifestyle, insuranceType };
 
     const isIntl = fromCity.country_name !== 'United States' || toCity.country_name !== 'United States';
     const results = await Promise.all([
@@ -1051,8 +1102,8 @@ window.calculate = async function() {
     if (!fromPrices) throw new Error('No price data found for ' + fromCity.city_name + '. Try a larger nearby city.');
     if (!toPrices) throw new Error('No price data found for ' + toCity.city_name + '. Try a larger nearby city.');
 
-    const fromBudget = buildMonthlyBudget(fromPrices, profile, fromCity.country_name);
-    const toBudget = buildMonthlyBudget(toPrices, profile, toCity.country_name);
+    const fromBudget = buildMonthlyBudget(fromPrices, profile, fromCity.country_name, fromCity.state_code);
+    const toBudget = buildMonthlyBudget(toPrices, profile, toCity.country_name, toCity.state_code);
 
     clearInterval(stepTimer);
     document.getElementById('loading').style.display = 'none';
@@ -1063,7 +1114,7 @@ window.calculate = async function() {
     const toState = toCity.state_code || null;
 
     // Update URL so results are shareable
-    history.replaceState(null, '', buildShareUrl(fromCity, toCity, adults, children, childcareKids, incomes, housingType, lifestyleState));
+    history.replaceState(null, '', buildShareUrl(fromCity, toCity, adults, children, childcareKids, incomes, housingType, lifestyleState, insuranceType));
 
     renderResults(fromCity, toCity, fromPrices, toPrices, fromBudget, toBudget, totalIncome, toQoL, fromState, toState, adults, incomes);
 
