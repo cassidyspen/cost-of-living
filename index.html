@@ -49,10 +49,8 @@
         <label>Adults</label>
         <div class="select-wrap">
           <select id="adults" onchange="updateAdultIncomes()">
-            <option value="1">1 adult</option>
-            <option value="2">2 adults</option>
-            <option value="3">3 adults</option>
-            <option value="4">4 adults</option>
+            <option value="1">Myself</option>
+            <option value="2">Myself + Partner</option>
           </select>
         </div>
       </div>
@@ -93,14 +91,7 @@
         <label>Adult 2 gross income ($) <span style="font-weight:400;font-size:0.8em;opacity:0.7">(before tax)</span></label>
         <input type="number" id="income2" placeholder="0" value="0" min="0" oninput="updateTotalIncomeDisplay()">
       </div>
-      <div class="field" id="incomeField3" style="display:none">
-        <label>Adult 3 gross income ($) <span style="font-weight:400;font-size:0.8em;opacity:0.7">(before tax)</span></label>
-        <input type="number" id="income3" placeholder="0" value="0" min="0" oninput="updateTotalIncomeDisplay()">
-      </div>
-      <div class="field" id="incomeField4" style="display:none">
-        <label>Adult 4 gross income ($) <span style="font-weight:400;font-size:0.8em;opacity:0.7">(before tax)</span></label>
-        <input type="number" id="income4" placeholder="0" value="0" min="0" oninput="updateTotalIncomeDisplay()">
-      </div>
+
       <div id="totalIncomeDisplay" style="display:none;grid-column:1/-1;font-size:0.82em;color:var(--text3);padding:2px 0 0">
         Total household gross income: <strong id="totalIncomeAmt"></strong>
       </div>
@@ -205,7 +196,7 @@ function buildShareUrl(fc, tc, adults, children, childcareKids, incomes, housing
 function readUrlParams() {
   const p = new URLSearchParams(window.location.search);
   if (!p.has('fc') || !p.has('tc')) return null;
-  const adults = parseInt(p.get('a')) || 1;
+  const adults = Math.min(parseInt(p.get('a')) || 1, 2);
   const incomes = [];
   for (let i = 1; i <= adults; i++) incomes.push(parseFloat(p.get('i' + i)) || 0);
   return {
@@ -960,9 +951,7 @@ setupAutocomplete('toCityInput', 'toDropdown', function(city) { toCity = city; }
 // ─── HOUSEHOLD ────────────────────────────────────────────────────────────────
 window.updateAdultIncomes = function() {
   const n = parseInt(document.getElementById('adults').value) || 1;
-  for (var i = 2; i <= 4; i++) {
-    document.getElementById('incomeField' + i).style.display = i <= n ? '' : 'none';
-  }
+  document.getElementById('incomeField2').style.display = n >= 2 ? '' : 'none';
   updateTotalIncomeDisplay();
 };
 
