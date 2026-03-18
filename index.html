@@ -164,11 +164,12 @@
 
   <footer>
     <div class="footer-note">
-      Prices from TravelTables · Quality of life from Teleport<br>
-      <a href="#" onclick="openMethodology();return false;">Methodology</a>
+      Prices from TravelTables<br>
+      <a href="#" onclick="openMethodology();return false;">Methodology</a> · 
+      <a href="https://docs.google.com/forms/d/e/1FAIpQLSf0sy8XOk75dKI-l1cFl6Z7VAVWS22SjmgvrKVRBvxzBx2GHg/viewform?usp=dialog" target="_blank"> Give Feedback</a>
     </div>
     <div class="footer-note" style="text-align:right">
-      Built for people who are<br>actually thinking about moving.
+      Built by Cassidy Spencer<br>linkedin.com/in/cassidy-spencer-cs/
     </div>
   </footer>
 </div>
@@ -805,11 +806,11 @@ function renderResults(fromCity, toCity, fromPrices, toPrices, fromBudget, toBud
     const toHC = toBudget.healthcare;
     const toHCVal = toHC > 0 ? fmt(toHC) : '—';
     const toHCCls = (fromBudget.healthcare > 0 && toHC > 0) ? (toHC > fromBudget.healthcare * 1.05 ? 'up' : toHC < fromBudget.healthcare * 0.95 ? 'down' : '') : '';
-    healthcareRow = '<div class="breakdown-row"><span class="item" style="display:flex;flex-direction:column;gap:1px">🏥 Healthcare/mo<span style="font-size:10px;color:var(--text3);font-weight:400">est. based on 2025 ACA rates</span></span><div class="values"><span class="from-val">' + fromHCVal + '</span><span class="to-val ' + toHCCls + '">' + toHCVal + '</span></div></div>';
+    healthcareRow = '<div class="breakdown-row"><span class="item" style="display:flex;flex-direction:column;gap:1px">🏥 Healthcare/mo<span style="font-size:10px;color:var(--text3);font-weight:400">*Estimate</span></span><div class="values"><span class="from-val">' + fromHCVal + '</span><span class="to-val ' + toHCCls + '">' + toHCVal + '</span></div></div>';
   }
 
   const healthcareDisclaimer = (fromBudget.healthcare > 0 || toBudget.healthcare > 0)
-    ? '<div class="tax-disclaimer" style="margin-top:16px">Healthcare estimates based on 2025 ACA benchmark premiums · Employer contributions from KFF 2024 survey · Actual costs vary by age, plan and employer</div>'
+    ? '<div class="tax-disclaimer" style="margin-top:16px">*Healthcare estimates based on 2025 ACA benchmark premiums · Employer contributions from KFF 2024 survey · Actual costs vary by age, plan and employer</div>'
     : '';
 
   let avgSalaryNote = '';
@@ -898,10 +899,10 @@ function renderResults(fromCity, toCity, fromPrices, toPrices, fromBudget, toBud
         <div class="insight-title">Salary reality check</div>
         <div class="insight-text">${salaryText}</div>
         ${taxSectionHtml}
+        ${healthcareDisclaimer}
         <a class="insight-link" href="https://www.glassdoor.com/Salaries/index.htm" target="_blank" rel="noopener">See salaries by job title on Glassdoor ↗</a>
       </div>
     </div>
-    ${healthcareDisclaimer}
     ${qolHtml}
     <div class="share-row">
       <button class="share-btn" onclick="copyShareLink()">🔗 Copy share link</button>
